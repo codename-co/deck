@@ -47,6 +47,16 @@
 .deck-block .deck-block-source { display: none; }
 .deck-block.is-failed .deck-block-source { display: block; }
 .deck-number { position: absolute; inset-block-end: 2.6cqi; inset-inline-end: 3cqi; font-size: 1.5cqi; color: var(--deck-muted); font-variant-numeric: tabular-nums; }
+/* The kit's logo (docs/kits.md): in its corner, small, or big on a cover and at the end; on dark paper its dark one, else on a light plate. */
+.deck-logo { position: absolute; z-index: 1; inset-block-start: 3.2cqi; inset-inline-end: 3.5cqi; block-size: 4.5cqi; inline-size: auto; max-inline-size: 20cqi; object-fit: contain; pointer-events: none; }
+.deck-logo[data-size="big"] { block-size: 8cqi; max-inline-size: 32cqi; }
+.deck-logo[data-at$="start"] { inset-inline: 3.5cqi auto; }
+.deck-logo[data-at^="bottom"] { inset-block: auto 3.2cqi; }
+.deck-slide:has(.deck-logo[data-at="bottom-end"]) .deck-number { inset-inline: 3cqi auto; }
+.deck-logo.is-dark { display: none; }
+:is(.deck[data-scheme="light"] :is(.deck-slide[data-paper="ink"], .deck-class-invert), .deck[data-scheme="dark"] .deck-slide:is([data-paper="paper"], [data-paper="soft"]):not(.deck-class-invert), .deck[data-fill="dark"] .deck-slide[data-paper="fill"]) .deck-logo.has-dark { display: none; }
+:is(.deck[data-scheme="light"] :is(.deck-slide[data-paper="ink"], .deck-class-invert), .deck[data-scheme="dark"] .deck-slide:is([data-paper="paper"], [data-paper="soft"]):not(.deck-class-invert), .deck[data-fill="dark"] .deck-slide[data-paper="fill"]) .deck-logo.is-dark { display: block; }
+:is(.deck[data-scheme="light"] :is(.deck-slide[data-paper="ink"], .deck-class-invert), .deck[data-scheme="dark"] .deck-slide:is([data-paper="paper"], [data-paper="soft"]):not(.deck-class-invert), .deck[data-fill="dark"] .deck-slide[data-paper="fill"]) .deck-logo:not(.has-dark, .is-dark) { background: #fff; padding: 0.5cqi; border-radius: 0.5cqi; }
 
 /* Layouts from their kit's definition: the paper they are on, where their words sit, how big their heading is. */
 .deck-slide[data-paper="fill"] { background: var(--deck-fill); color: var(--deck-on-fill); }

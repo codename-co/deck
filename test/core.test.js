@@ -83,6 +83,26 @@ test("a kit's layouts are checked against the grammar, and nothing but layout ge
   assert.equal(Object.keys(STANDARD.layouts).length, 17)
 })
 
+test("a kit's logo is a picture inside it, its corner one of four; a usual layout turned off goes; dark tokens merge; a chart's colours its own", () => {
+  const png = 'data:image/png;base64,iVBORw0KGgo='
+  const { kit, problems } = mergeKits(
+    { tokens: { primary: '#c2410c', logo: png, dark: { paper: '#101010' }, series: ['#c2410c', '#0f766e'] }, layouts: { image: false, default: false } },
+    { tokens: { logoAt: 'bottom-start', dark: { logo: png } } })
+  assert.deepEqual([kit.tokens.logo, kit.tokens.logoAt, kit.tokens.dark], [png, 'bottom-start', { paper: '#101010', logo: png }])
+  assert.ok(!kit.layouts.image && kit.layouts.default, 'the default stays')
+  assert.deepEqual(problems, [])
+  assert.deepEqual([kit.layouts.cover.logo, kit.layouts.default.logo, kit.layouts.full.logo], ['big', 'small', 'none'])
+  for (const bad of ['https://evil.example/logo.png', 'data:text/html;base64,PHA+', `data:image/png;base64,${'A'.repeat(700_001)}`, 'data:image/png;base64,<svg>']) {
+    const merged = mergeKits({ tokens: { logo: bad, logoAt: 'middle' } })
+    assert.equal(merged.kit.tokens.logo, undefined, bad.slice(0, 40))
+    assert.equal(merged.problems.length, 2)
+  }
+  const scheme = schemeOf(tokensOf({}, { primary: '#c2410c', series: ['#c2410c', '#0f766e'] }), 'light')
+  assert.equal(scheme.series.length, 6)
+  assert.ok(scheme.series.every((one) => contrast(hex(one) ?? [0, 0, 0], hex(scheme.paper) ?? [255, 255, 255]) >= 3))
+  assert.equal(scheme.series[1], scheme.series[3], 'the kit\'s own, round again')
+})
+
 test('a slide that names no layout is given the one its content suits', () => {
   const deck = parseDeck(readFileSync(new URL('../examples/kit.md', import.meta.url), 'utf8'))
   assert.deepEqual(deck.slides.map((s) => s.settings.layout ? `(${s.settings.layout})` : inferLayout(s)),

@@ -12,7 +12,9 @@ page.on('pageerror', (e) => errors.push(e.message))
 await page.goto(`file://${join(here, 'examples', 'kit.deck.html')}`)
 await page.waitForSelector('.deck-slide.is-shown')
 await page.waitForTimeout(800)
-const info = await page.evaluate(() => ({ problems: window.deckView.kitProblems, layouts: window.deckView.slides().map((s) => s.dataset.layout), kit: window.deckView.kit.name, overflow: [...document.querySelectorAll('.deck-stage .deck-slide[data-overflow]')].length }))
+const info = await page.evaluate(() => ({ problems: window.deckView.kitProblems, layouts: window.deckView.slides().map((s) => s.dataset.layout), kit: window.deckView.kit.name, overflow: [...document.querySelectorAll('.deck-stage .deck-slide[data-overflow]')].length,
+  // The logo each slide shows, the light one or the dark, small or big.
+  logos: window.deckView.slides().map((s) => { const shown = [...s.querySelectorAll('.deck-logo')].find((one) => getComputedStyle(one).display !== 'none'); return shown ? `${shown.classList.contains('is-dark') ? 'dark' : 'light'} ${shown.dataset.size}` : 'none' }) }))
 for (let i = 0; i < info.layouts.length; i++) {
   await page.evaluate((i) => window.deckView.go(i, 99), i)
   await page.waitForTimeout(500)
@@ -26,10 +28,16 @@ const made = await page.evaluate(async () => {
   for (const path of Object.keys(zip.files).filter((p) => /slideLayouts\/slideLayout\d+\.xml$/.test(p))) names.push(/<p:cSld name="([^"]*)"/.exec(await zip.file(path).async('string'))?.[1])
   const bytes = new Uint8Array(await blob.arrayBuffer()); let text = ''
   for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return { report, names, data: btoa(text) }
+  // PptxGenJS's masters are PowerPoint's slide layouts.
+  const masters = await Promise.all(Object.keys(zip.files).filter((p) => /slideLayouts\/_rels\/slideLayout\d+\.xml\.rels$/.test(p)).map((p) => zip.file(p).async('string')))
+  return { report, names, data: btoa(text), withLogo: masters.filter((rels) => /relationships\/image"/.test(rels)).length }
 })
 await writeFile(join(here, 'out', 'kit.pptx'), Buffer.from(made.data, 'base64'))
-console.log(JSON.stringify({ ...info, report: made.report, pptxLayouts: made.names, errors }))
+console.log(JSON.stringify({ ...info, report: made.report, pptxLayouts: made.names, withLogo: made.withLogo, errors }))
+// Big on the cover, the dark one on the cover's dark orange and the section's ink, small elsewhere; on PowerPoint's layouts too.
+const logos = info.layouts.map((layout, i) => [layout, info.logos[i]])
+const logoWrong = !logos.some(([layout, logo]) => layout === 'cover' && logo === 'dark big') || !logos.some(([layout, logo]) => layout === 'section' && logo === 'dark small')
+  || !logos.some(([layout, logo]) => layout === 'default' && logo === 'light small') || made.withLogo < 3
 const wanted = ['Three numbers', 'Big question']
-if (errors.length || info.problems.length || info.overflow || !wanted.every((name) => made.names.includes(name))) { console.log('FAIL kit deck'); process.exitCode = 1 } else console.log('kit deck passed')
+if (errors.length || info.problems.length || info.overflow || logoWrong || !wanted.every((name) => made.names.includes(name))) { console.log('FAIL kit deck'); process.exitCode = 1 } else console.log('kit deck passed')
 await browser.close()

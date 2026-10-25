@@ -2,18 +2,27 @@
 // person, an organisation or a brain can make one and no kit can do more than lay out a slide.
 // deck's own kit holds the usual layouts; a host's (an organisation's, a project's) and the deck
 // file's own `kit:` go over it, in that order. A layout is a grid: its slots by name, the areas
-// they take, its tracks, how its words sit, what paper it is on, and the PowerPoint layout it is
-// nearest to. Everything is checked against a small grammar; what fails is dropped, with a reason.
-// Pure.
+// they take, its tracks, how its words sit, what paper it is on, how big its logo shows, and the
+// PowerPoint layout it is nearest to; a kit may turn one of the usual layouts off. Its tokens may
+// hold a logo, a picture inside the kit and never an address. Everything is checked against a small
+// grammar; what fails is dropped, with a reason. Pure.
 
 /** @typedef {{ required?: boolean, max_words?: number, max_chars?: number, items?: [number, number], item_max_words?: number, heading_max_words?: number, kind?: string }} Budget */
-/** @typedef {{ label?: Record<string, string> | string, intent?: string, use_when?: string, avoid_when?: string, slots: string[], budgets: Record<string, Budget>, areas: string[][], columns: string[], rows: string[], align: 'start' | 'center' | 'end', justify: 'start' | 'center' | 'end', paper: 'paper' | 'fill' | 'ink' | 'soft', title: 'normal' | 'large' | 'huge', pptx: string, numbered: boolean }} Layout */
+/** @typedef {{ label?: Record<string, string> | string, intent?: string, use_when?: string, avoid_when?: string, slots: string[], budgets: Record<string, Budget>, areas: string[][], columns: string[], rows: string[], align: 'start' | 'center' | 'end', justify: 'start' | 'center' | 'end', paper: 'paper' | 'fill' | 'ink' | 'soft', title: 'normal' | 'large' | 'huge', logo: 'big' | 'small' | 'none', pptx: string, numbered: boolean }} Layout */
 /** @typedef {{ name?: string, tokens: Record<string, any>, layouts: Record<string, Layout> }} Kit */
 
 const NAME = /^[a-z][a-z0-9-]{0,31}$/
 const TRACK = /^(auto|min-content|max-content|\d{1,2}(\.\d)?fr|\d{1,3}%)$/
 const PPTX = ['Title Slide', 'Title and Content', 'Section Header', 'Two Content', 'Comparison', 'Title Only', 'Blank', 'Content with Caption', 'Picture with Caption']
-const ENUMS = /** @type {const} */ ({ align: ['start', 'center', 'end'], justify: ['start', 'center', 'end'], paper: ['paper', 'fill', 'ink', 'soft'], title: ['normal', 'large', 'huge'] })
+const ENUMS = /** @type {const} */ ({ align: ['start', 'center', 'end'], justify: ['start', 'center', 'end'], paper: ['paper', 'fill', 'ink', 'soft'], title: ['normal', 'large', 'huge'], logo: ['small', 'big', 'none'] })
+/** The corners a logo sits in, as `logoAt` names them, the first by default. */
+export const CORNERS = ['top-end', 'top-start', 'bottom-end', 'bottom-start']
+
+/**
+ * A logo as a kit holds it: a picture inside the kit, PNG, JPEG, GIF, WebP or SVG as a data: address of 512 KB at most,
+ * never an address to fetch; else null. @param {unknown} value
+ */
+export const logoOf = (value) => (typeof value === 'string' && value.length <= 700_000 && /^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[a-z0-9+/]+=*$/i.test(value) ? value : null)
 
 /** The names brains give the usual layouts, for the ones deck has. */
 export const ALIASES = /** @type {Record<string, string>} */ ({
@@ -27,22 +36,22 @@ export const STANDARD = /** @type {Kit} */ ({
   tokens: {},
   layouts: Object.fromEntries(Object.entries(/** @type {Record<string, any>} */ ({
     default: { label: { en: 'Title and content', fr: 'Titre et contenu' }, pptx: 'Title and Content' },
-    cover: { label: { en: 'Cover', fr: 'Couverture' }, justify: 'center', paper: 'fill', title: 'huge', pptx: 'Title Slide', numbered: false },
-    intro: { label: { en: 'Introduction', fr: 'Introduction' }, justify: 'center', paper: 'fill', title: 'large', pptx: 'Title Slide', numbered: false },
+    cover: { label: { en: 'Cover', fr: 'Couverture' }, justify: 'center', paper: 'fill', title: 'huge', logo: 'big', pptx: 'Title Slide', numbered: false },
+    intro: { label: { en: 'Introduction', fr: 'Introduction' }, justify: 'center', paper: 'fill', title: 'large', logo: 'big', pptx: 'Title Slide', numbered: false },
     section: { label: { en: 'Section', fr: 'Section' }, justify: 'center', paper: 'ink', title: 'huge', pptx: 'Section Header', numbered: false },
     center: { label: { en: 'Centred', fr: 'Centré' }, justify: 'center', align: 'center', pptx: 'Title Only' },
     statement: { label: { en: 'Statement', fr: 'Affirmation' }, justify: 'center', align: 'center', title: 'large', pptx: 'Title Only' },
     fact: { label: { en: 'Big number', fr: 'Grand chiffre' }, justify: 'center', align: 'center', title: 'huge', pptx: 'Title Only' },
     quote: { label: { en: 'Quote', fr: 'Citation' }, justify: 'center', pptx: 'Title Only' },
-    end: { label: { en: 'Closing', fr: 'Clôture' }, justify: 'center', align: 'center', paper: 'fill', title: 'large', pptx: 'Title Slide', numbered: false },
-    full: { label: { en: 'Full', fr: 'Plein cadre' }, pptx: 'Blank', numbered: false },
-    none: { label: { en: 'Blank', fr: 'Vide' }, pptx: 'Blank', numbered: false },
+    end: { label: { en: 'Closing', fr: 'Clôture' }, justify: 'center', align: 'center', paper: 'fill', title: 'large', logo: 'big', pptx: 'Title Slide', numbered: false },
+    full: { label: { en: 'Full', fr: 'Plein cadre' }, logo: 'none', pptx: 'Blank', numbered: false },
+    none: { label: { en: 'Blank', fr: 'Vide' }, logo: 'none', pptx: 'Blank', numbered: false },
     'two-cols': { label: { en: 'Two columns', fr: 'Deux colonnes' }, slots: ['default', 'right'], areas: 'default right', columns: '1fr 1fr', pptx: 'Two Content' },
     'two-cols-header': { label: { en: 'Comparison', fr: 'Comparaison' }, slots: ['default', 'left', 'right', 'bottom'], areas: 'default default | left right | bottom bottom', columns: '1fr 1fr', rows: 'auto 1fr auto', pptx: 'Comparison' },
     'three-cols': { label: { en: 'Three columns', fr: 'Trois colonnes' }, slots: ['default', 'left', 'middle', 'right'], areas: 'default default default | left middle right', columns: '1fr 1fr 1fr', rows: 'auto 1fr', pptx: 'Comparison' },
     'image-left': { label: { en: 'Picture left', fr: 'Image à gauche' }, pptx: 'Picture with Caption', justify: 'center' },
     'image-right': { label: { en: 'Picture right', fr: 'Image à droite' }, pptx: 'Picture with Caption', justify: 'center' },
-    image: { label: { en: 'Picture', fr: 'Image' }, pptx: 'Blank', numbered: false },
+    image: { label: { en: 'Picture', fr: 'Image' }, logo: 'none', pptx: 'Blank', numbered: false },
   })).map(([name, given]) => [name, /** @type {Layout} */ (layoutOf(given).layout)])),
 })
 
@@ -93,7 +102,7 @@ export function layoutOf(given) {
   return {
     layout: /** @type {Layout} */ ({
       label, intent: words(given.intent), use_when: words(given.use_when), avoid_when: words(given.avoid_when), slots, budgets, areas: rows, columns, rows: rowTracks,
-      align: pick('align', 'start'), justify: pick('justify', 'start'), paper: pick('paper', 'paper'), title: pick('title', 'normal'),
+      align: pick('align', 'start'), justify: pick('justify', 'start'), paper: pick('paper', 'paper'), title: pick('title', 'normal'), logo: pick('logo', 'small'),
       pptx: PPTX.includes(given.pptx) ? given.pptx : slots.length > 1 ? 'Comparison' : 'Title and Content', numbered: given.numbered !== false,
     }),
     problems,
@@ -137,7 +146,8 @@ export function tokensFrom(given) {
 }
 
 /**
- * Kits merged, the later over the earlier: their tokens, and their layouts by name, each checked.
+ * Kits merged, the later over the earlier: their tokens, their dark ones within theirs, and their layouts by name, each
+ * checked; a layout given as false is taken away, but the default. A logo that isn't a picture inside the kit is dropped.
  * @param {...any} kits @returns {{ kit: Kit, problems: string[] }}
  */
 export function mergeKits(...kits) {
@@ -147,14 +157,22 @@ export function mergeKits(...kits) {
   for (const given of kits) {
     if (!given || typeof given !== 'object') continue
     if (typeof given.name === 'string') kit.name = given.name
-    if (given.tokens && typeof given.tokens === 'object') kit.tokens = { ...kit.tokens, ...tokensFrom(given.tokens) }
+    if (given.tokens && typeof given.tokens === 'object') {
+      const next = tokensFrom(given.tokens), dark = next.dark && typeof next.dark === 'object' ? { ...kit.tokens.dark, ...next.dark } : kit.tokens.dark
+      kit.tokens = { ...kit.tokens, ...next, ...(dark && { dark }) }
+    }
     for (const [name, definition] of Object.entries(given.layouts ?? given.types ?? {})) {
       if (!NAME.test(name)) { problems.push(`layout ${name}: not a-z, 0-9 and -`); continue }
+      if (definition === false) { if (name !== 'default') delete kit.layouts[name]; continue }
       const { layout, problems: found } = layoutOf(definition)
       problems.push(...found.map((p) => `layout ${name}: ${p}`))
       if (layout) kit.layouts[name] = layout
     }
   }
+  for (const [where, tokens] of /** @type {[string, Record<string, any> | undefined][]} */ ([['logo', kit.tokens], ['dark logo', kit.tokens.dark]])) {
+    if (tokens?.logo !== undefined && !logoOf(tokens.logo)) { problems.push(`${where}: not a picture inside the kit (PNG, JPEG, GIF, WebP or SVG as data:, 512 KB at most)`); delete tokens.logo }
+  }
+  if (kit.tokens.logoAt !== undefined && !CORNERS.includes(kit.tokens.logoAt)) { problems.push(`logoAt ${kit.tokens.logoAt} is not one of ${CORNERS.join(', ')}`); delete kit.tokens.logoAt }
   return { kit, problems }
 }
 

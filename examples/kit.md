@@ -9,6 +9,10 @@ kit:
     primary: '#c2410c'
     voice: elegant
     radius: 4
+    logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjggNDgiPjxyZWN0IHg9IjIiIHk9IjYiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzNiIgcng9IjkiIGZpbGw9IiNjMjQxMGMiLz48cGF0aCBkPSJNMTEgMzBxOS0xNCAxOCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmYmZhZjciIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48dGV4dCB4PSI0OCIgeT0iMzMiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzFmMmEyZSI+TWFydGluPC90ZXh0Pjwvc3ZnPg=='
+    logoAt: top-end
+    dark:
+      logo: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjggNDgiPjxyZWN0IHg9IjIiIHk9IjYiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzNiIgcng9IjkiIGZpbGw9IiNjMjQxMGMiLz48cGF0aCBkPSJNMTEgMzBxOS0xNCAxOCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmYmZhZjciIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48dGV4dCB4PSI0OCIgeT0iMzMiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIyNSIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZiZmFmNyI+TWFydGluPC90ZXh0Pjwvc3ZnPg=='
   layouts:
     three-numbers:
       label: { en: Three numbers, fr: Trois chiffres }

@@ -8,7 +8,8 @@
     "rootDir": "src"
   },
   "include": [
-    "src/index.js"
+    "src/index.js",
+    "src/template.js"
   ],
   "$comment": "deck's types as hosts read them, from its JSDoc (npm run build)."
 }

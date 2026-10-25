@@ -79,11 +79,15 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
         const inner = slot.firstElementChild && slot.firstElementChild !== title ? across(slot.firstElementChild) : { x: r.x, w: r.w }
         objects.push({ placeholder: { options: { name: `body-${slot.dataset.slot}`, type: 'body', x: inner.x, y: top + 0.08, w: inner.w, h: Math.max(0.3, r.y + r.h - top - 0.08), margin: 0, valign: anchor(slot), color: hexOf(getComputedStyle(slot).color) }, text: '' } })
       }
+      // The kit's logo as the slide shows it, the one that reads on its paper, on the master: a slide added in PowerPoint has it too.
+      const logo = /** @type {HTMLImageElement | undefined} */ ([...element.querySelectorAll('.deck-logo')].find((one) => getComputedStyle(one).display !== 'none'))
+      const mark = logo && await pictureOf(logo.src, logo.clientWidth * 3, logo.clientHeight * 3)
+      if (logo && mark) { objects.push({ image: { data: mark, ...place(logo) } }); report.pictures++ }
       pres.defineSlideMaster({
         title: masterName, background: { color: hexOf(style.backgroundColor) }, objects,
         slideNumber: definition?.numbered !== false ? { x: rtl ? 0.3 : W - 0.9, y: H - 0.55, w: 0.6, h: 0.3, fontSize: 10, color: hexOf(rootStyle.getPropertyValue('--deck-muted').trim() || '#666666') } : undefined,
       })
-      masters.set(masterName, new Set(objects.map((o) => o.placeholder.options.name)))
+      masters.set(masterName, new Set(objects.flatMap((o) => (o.placeholder ? [o.placeholder.options.name] : []))))
     }
     const names = masters.get(masterName)
     const slide = pres.addSlide({ masterName })

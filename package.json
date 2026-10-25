@@ -1,6 +1,6 @@
 {
   "name": "@codename/deck",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Slide decks as one web page: Markdown in Slidev's form inside a .deck.html file any browser presents, a renderer that runs anywhere, kits of layouts and looks, and an editable PowerPoint out",
   "license": "MIT",
   "type": "module",
@@ -15,6 +15,10 @@
     },
     "./file": "./dist/deck.js",
     "./css": "./dist/deck.css",
+    "./template": {
+      "types": "./dist/types/template.d.ts",
+      "default": "./dist/template.mjs"
+    },
     "./src/*": "./src/*"
   },
   "files": [

@@ -4,7 +4,7 @@
 // lightened until it reads at AA on the paper it sits on (4.5:1 for words, 3:1 for a chart's
 // marks), so a brain's or a person's colours can't make a slide unreadable. Pure.
 
-/** @typedef {{ paper: string, ink: string, primary: string, voice: string, radius: number, muted?: string, soft?: string, dark?: Record<string, string>, fonts?: { heading: string[], body: string[] } }} Tokens */
+/** @typedef {{ paper: string, ink: string, primary: string, voice: string, radius: number, muted?: string, soft?: string, series?: string[], dark?: Record<string, string>, fonts?: { heading: string[], body: string[] } }} Tokens */
 /** @typedef {{ paper: string, ink: string, muted: string, line: string, primary: string, onPrimary: string, soft: string, series: string[] }} Scheme */
 
 /** Looks a deck can name (`theme:`), each a handful of tokens. */
@@ -46,6 +46,7 @@ function clean(given) {
   if (given.fonts && Array.isArray(given.fonts.heading) && Array.isArray(given.fonts.body)) kept.fonts = { heading: given.fonts.heading.map(String), body: given.fonts.body.map(String) }
   if (typeof given.voice === 'string') kept.voice = given.voice
   if (typeof given.radius === 'number') kept.radius = given.radius
+  if (Array.isArray(given.series) && given.series.length && given.series.every((/** @type {unknown} */ c) => typeof c === 'string' && hex(c))) kept.series = given.series.slice(0, 6)
   return kept
 }
 
@@ -63,7 +64,9 @@ export function schemeOf(tokens, scheme) {
   // The primary as a fill keeps its own colour; as words or marks it is made to read on the paper.
   const text = readable(primary, paper, 4.5)
   const onPrimary = contrast(ink, primary) >= contrast(paper, primary) ? ink : paper
-  const series = [0, 1, 2, 3, 4, 5].map((n) => readable(rotate(primary, n * 57), paper, 3))
+  // A chart's colours: the kit's own (a template's accents), else the primary turned round the wheel; each made to read at 3:1.
+  const given = (tokens.series ?? []).map(hex).filter((c) => c !== null)
+  const series = [0, 1, 2, 3, 4, 5].map((n) => readable(/** @type {number[]} */ (given[n % (given.length || 1)] ?? rotate(primary, n * 57)), paper, 3))
   return {
     paper: css(paper), ink: css(ink), muted: css(readable(round(hex(own.muted ?? (scheme === 'light' ? tokens.muted ?? '' : '')) ?? mix(ink, paper, 0.38)), paper, 4.5)), line: css(mix(ink, paper, 0.82)),
     primary: css(text), onPrimary: css(onPrimary), soft: css(hex(own.soft ?? (scheme === 'light' ? tokens.soft ?? '' : '')) ?? mix(primary, paper, 0.78)), series: series.map(css),

@@ -4,7 +4,7 @@
 // source (data-edit, offsets), so an edit made on the slide goes back into the Markdown. HTML a
 // deck holds is not drawn: Slidev's <v-click> and <v-clicks> become steps, <br> a line break, and
 // any other tag gives up its words alone. ```echarts and ```mermaid go to the host's drawers.
-import { STANDARD, inferLayout, ALIASES } from './kit.js'
+import { STANDARD, CORNERS, inferLayout, ALIASES } from './kit.js'
 
 /** @typedef {import('./parse.js').Slide} Slide */
 /** @typedef {import('./parse.js').Slot} Slot */
@@ -73,6 +73,14 @@ export function renderSlide(slide, context) {
   // Slots a layout doesn't have still show, under the rest, rather than being lost.
   for (const slot of slide.slots) if (!names.includes(slot.name)) canvas.append(h('div', { class: 'deck-slot', 'data-slot': slot.name }, blocks(slot, context, counter)))
   if (definition.numbered && slide.settings.paginate !== false) section.append(h('span', { class: 'deck-number', 'aria-hidden': 'true' }, [context.number(slide.index + 1)]))
+  // The kit's logo in its corner, small, or big where the layout says (a cover, the end); its dark one beside it, which the
+  // stylesheet shows on dark paper, where without one the logo sits on a light plate.
+  const { logo, logoAt, dark } = context.kit.tokens, at = CORNERS.includes(logoAt) ? logoAt : CORNERS[0]
+  if (logo && definition.logo !== 'none') {
+    for (const [src, kind] of [[logo, dark?.logo ? 'has-dark' : ''], [dark?.logo, 'is-dark']]) {
+      if (src) section.append(h('img', { class: `deck-logo ${kind}`.trim(), src, alt: '', 'aria-hidden': 'true', 'data-size': definition.logo, 'data-at': at }))
+    }
+  }
   return { element: section, steps: counter.step }
 }
 

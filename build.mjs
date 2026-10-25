@@ -1,6 +1,7 @@
 // Builds dist/: deck.js, the classic script a .deck.html file links to or holds, with marked inside;
 // deck.mjs, the module for a host that brings its own marked (through its import map);
-// deck.bundle.mjs, the same with marked inside, for a host without one; deck.css, the stylesheet.
+// deck.bundle.mjs, the same with marked inside, for a host without one; deck.css, the stylesheet; template.mjs, a
+// kit from a PowerPoint template and a kit's tokens out, which a host loads only when it reads or writes one.
 import { build } from 'esbuild'
 import { gzipSync } from 'node:zlib'
 import { readFileSync, copyFileSync, mkdirSync } from 'node:fs'
@@ -10,8 +11,9 @@ const common = { bundle: true, minify: true, legalComments: 'none', target: ['ch
 await build({ ...common, entryPoints: ['src/standalone.js'], outfile: 'dist/deck.js', format: 'iife' })
 await build({ ...common, entryPoints: ['src/index.js'], outfile: 'dist/deck.mjs', format: 'esm', external: ['marked'] })
 await build({ ...common, entryPoints: ['src/index.js'], outfile: 'dist/deck.bundle.mjs', format: 'esm' })
+await build({ ...common, entryPoints: ['src/template.js'], outfile: 'dist/template.mjs', format: 'esm' })
 copyFileSync('src/deck.css', 'dist/deck.css')
-for (const file of ['dist/deck.js', 'dist/deck.mjs', 'dist/deck.bundle.mjs', 'dist/deck.css']) {
+for (const file of ['dist/deck.js', 'dist/deck.mjs', 'dist/deck.bundle.mjs', 'dist/deck.css', 'dist/template.mjs']) {
   const bytes = readFileSync(file)
   console.log(file.padEnd(22), `${(bytes.length / 1024).toFixed(1)} KB, ${(gzipSync(bytes, { level: 9 }).length / 1024).toFixed(1)} KB gzipped`)
 }
