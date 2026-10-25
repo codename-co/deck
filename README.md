@@ -76,6 +76,8 @@ npm run eval           # ask brains for decks (LM Studio on localhost:1234), see
 
 Browser tests need Playwright's browsers once: `npx playwright install chromium webkit`.
 
+Commits carry no Co-Authored-By or Claude-Session trailer: `.claude/settings.json` turns Claude Code's attribution off for this repository, and `.githooks/commit-msg` refuses such a trailer whatever makes the commit (`npm install` points git at `.githooks`).
+
 ## In this repository
 
 | Path | What it is |

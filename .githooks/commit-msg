@@ -1,0 +1,6 @@
+#!/bin/sh
+# No commit in deck names Claude, or Anthropic, as a co-author, whatever tool makes it.
+if grep -qiE '^(co-authored-by|claude-session):.*(claude|anthropic)' "$1"; then
+  echo "commit-msg: drop the Co-Authored-By or Claude-Session trailer; deck's commits carry none." >&2
+  exit 1
+fi
