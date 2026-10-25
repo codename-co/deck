@@ -1,5 +1,5 @@
 // Builds dist/: deck.js, the classic script a .deck.html file links to or holds, with marked inside;
-// deck.mjs, the module for a host that brings its own marked (Jean, through its import map);
+// deck.mjs, the module for a host that brings its own marked (through its import map);
 // deck.bundle.mjs, the same with marked inside, for a host without one; deck.css, the stylesheet.
 import { build } from 'esbuild'
 import { gzipSync } from 'node:zlib'

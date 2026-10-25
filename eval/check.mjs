@@ -1,4 +1,4 @@
-// Each reply: its deck found (strictly, then with Jean's repairs), read, drawn in Chromium, and
+// Each reply: its deck found, read, drawn in Chromium, and
 // checked: slides, layouts, slots where a two-column layout needs them, steps, charts that parse
 // and draw, diagrams that draw, HTML or classes the skill forbids, its language, slides that don't fit.
 import { chromium } from 'playwright'

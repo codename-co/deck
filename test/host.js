@@ -1,4 +1,4 @@
-// A host page under Jean's kind of policy: no inline style, no inline script, Trusted Types with no policy at all.
+// A host page under with policies: no inline style, no inline script, Trusted Types with no policy at all.
 import { createDeck } from '/dist/deck.bundle.mjs'
 const violations = []
 document.addEventListener('securitypolicyviolation', (event) => violations.push(`${event.violatedDirective} ${event.blockedURI}`))
@@ -6,7 +6,7 @@ const source = await (await fetch('/examples/en.md')).text()
 let drawnCharts = 0
 const view = createDeck(/** @type {HTMLElement} */ (document.getElementById('root')), {
   source, headings: 'aria',
-  // The host's own drawers: here a stand-in that draws with the DOM alone, as Jean's <app-chart> would.
+  // The host's own drawers: here a stand-in that draws with the DOM alone.
   blocks: { echarts: (box) => { drawnCharts++; box.append(Object.assign(document.createElement('div'), { className: 'deck-chart', textContent: 'chart' })) }, mermaid: (box) => { box.append(Object.assign(document.createElement('div'), { className: 'deck-diagram', textContent: 'diagram' })) } },
   resolve: (src) => (src.startsWith('./') ? `/examples/${src.slice(2)}` : src),
 })

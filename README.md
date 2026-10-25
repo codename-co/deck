@@ -1,6 +1,6 @@
 # deck
 
-Slide decks as one web page. A deck is a `.deck.html` file: its Markdown, in Slidev's form, sits whole inside it, and a small renderer draws and presents it in any browser. Opened with scripts off, the same file shows its Markdown as plain text. The renderer also runs inside a host application (Jean is the first), changes a deck live as Markdown or on the slide, and saves it as a PowerPoint whose words, tables and charts stay editable.
+Slide decks as one web page. A deck is a `.deck.html` file: its Markdown, in Slidev's form, sits whole inside it, and a small renderer draws and presents it in any browser. Opened with scripts off, the same file shows its Markdown as plain text. The renderer also runs inside a host application, changes a deck live as Markdown or on the slide, and saves it as a PowerPoint whose words, tables and charts stay editable.
 
 ````html
 <!doctype html>
@@ -90,7 +90,7 @@ Commits carry no Co-Authored-By or Claude-Session trailer: `.claude/settings.jso
 
 ## Status
 
-0.1.1, on npm as `@codename/deck`. It grew from Jean's phase 0 spike (October 2026); [docs/findings.md](docs/findings.md) says what was measured.
+0.1.1, on npm as `@codename/deck`. [docs/findings.md](docs/findings.md) says what was measured.
 
 ## Licence
 

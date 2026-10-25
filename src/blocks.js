@@ -2,7 +2,7 @@
 // from `base` (a CDN by default) the first time a slide needs it, never before. A chart is data,
 // read with JSON.parse; it takes the deck's colours and type, light or dark, and is drawn as SVG.
 // A diagram is drawn by Pele from Mermaid's language as SVG, then shown as a picture, so nothing it
-// makes runs or joins the page; its words are its picture's text for whoever can't see it. A host (Jean) gives
+// makes runs or joins the page; its words are its picture's text for whoever can't see it. A host gives
 // its own drawers instead.
 
 /** @typedef {{ base: string, root: HTMLElement, versions?: { echarts?: string, pele?: string } }} Where */

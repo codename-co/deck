@@ -1,6 +1,6 @@
 # Drawing decks in a host
 
-A host is a page that draws decks itself: Jean, or any other. deck builds every element with the DOM's own calls, sets custom properties through the CSSOM rather than style attributes, and needs no Trusted Types policy, so it runs under a policy with `style-src 'self'` and `trusted-types 'none'`. Load `@codename/deck` (with your own `marked` through an import map) or `@codename/deck/bundle`, and `@codename/deck/css` as a stylesheet.
+A host is a page that draws decks itself. deck builds every element with the DOM's own calls, sets custom properties through the CSSOM rather than style attributes, and needs no Trusted Types policy, so it runs under a policy with `style-src 'self'` and `trusted-types 'none'`. Load `@codename/deck` (with your own `marked` through an import map) or `@codename/deck/bundle`, and `@codename/deck/css` as a stylesheet.
 
 ## createDeck(element, options)
 
