@@ -39,7 +39,7 @@ layout: two-cols
 
 ## What it does
 
-- **Layouts and looks as kits.** Seventeen layouts come with deck, Slidev's names and PowerPoint's usual ones. A kit adds others, turns some off, and holds a design system (DTCG tokens or a few flat ones) and a logo, as data, never CSS. A slide that names no layout gets the one its content suits. A company's PowerPoint template (or an Office theme) reads into a kit, and a kit's tokens write out as DTCG. See [docs/kits.md](docs/kits.md).
+- **Layouts and looks as kits.** Seventeen layouts come with deck, Slidev's names and PowerPoint's usual ones. A kit adds others, turns some off, and holds a design system (DTCG tokens or a few flat ones, colours as hex or `rgb()`), a logo and the art a layout draws behind its words, as data, never CSS. A slide that names no layout gets the one its content suits. A company's PowerPoint template (or an Office theme) reads into a kit, its layouts with their pictures, shapes and words as their art, and a kit's tokens write out as DTCG. See [docs/kits.md](docs/kits.md).
 - **Light and dark** from the same tokens, every colour held at WCAG AA on its paper.
 - **Presenting:** full screen, a clicker's keys, steps (`<v-clicks>`), Slidev's transitions and a Morph that needs nothing written, the presenter's view with notes and a timer, all slides at once.
 - **Charts and diagrams:** ` ```echarts ` blocks drawn by ECharts, ` ```mermaid ` blocks drawn by [Pele](https://github.com/obsidianmd/pele) (every kind Mermaid has, from 17 KB a kind), each loaded the first time a slide needs it.

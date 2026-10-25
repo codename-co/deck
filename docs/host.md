@@ -40,9 +40,9 @@ Every block that can be changed by hand carries `data-edit="from-to"`, the offse
 const { blob, report } = await toPptx(view, { PptxGenJS, JSZip })
 ```
 
-A kit from a PowerPoint template, and a kit's tokens out, are `@codename/deck/template`'s (`kitFromTemplate`, `tokensToDtcg`, [kits.md](kits.md)), which a host imports only when it reads or writes one; `logoOf` and `CORNERS` check a kit's logo and its corner before it is kept.
+A kit from a PowerPoint template, and a kit's tokens out, are `@codename/deck/template`'s (`kitFromTemplate`, `tokensToDtcg`, [kits.md](kits.md)), which a host imports only when it reads or writes one; `logoOf` and `CORNERS` check a kit's logo and its corner before it is kept, and `rgbOf` a colour as deck reads it.
 
-PptxGenJS 4 (its bundle carries JSZip) is the host's to load, on demand. The file is made from the deck as drawn: a slide layout per deck layout, named by its label in the deck's language, with a placeholder for its title and each slot; lists as lists with their levels; tables; bars, lines, areas, pies, rings, points and radars as native charts with their numbers, other charts and diagrams as pictures, and pictures, alone on their line or beside the words, as pictures; notes; transitions; the kit's colours as the theme. `report` counts slides, charts, tables, pictures and placeholders.
+PptxGenJS 4 (its bundle carries JSZip) is the host's to load, on demand. The file is made from the deck as drawn: a slide layout per deck layout, named by its label in the deck's language, with a placeholder for its title and each slot; lists as lists with their levels; tables; bars, lines, areas, pies, rings, points and radars as native charts with their numbers, other charts and diagrams as pictures, and pictures, alone on their line or beside the words, as pictures; a layout's art as one picture on its slide layout; notes; transitions; the kit's colours as the theme. `report` counts slides, charts, tables, pictures and placeholders.
 
 ## Files
 

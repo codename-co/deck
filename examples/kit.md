@@ -22,6 +22,13 @@ kit:
       align: center
       justify: center
       pptx: Comparison
+    banner:
+      label: { en: Banner, fr: Bandeau }
+      slots: [default]
+      areas: . . . | . default . | . . .
+      columns: 1fr 12fr 1fr
+      rows: 1fr 6fr 2fr
+      art: [band]
     big-question:
       label: { en: Big question, fr: Grande question }
       paper: soft
@@ -29,6 +36,8 @@ kit:
       title: huge
       pptx: Section Header
       numbered: false
+  pictures:
+    band: 'data:image/svg+xml,%3Csvg%20xmlns=%22http%3A//www.w3.org/2000/svg%22%20width=%22960%22%20height=%22540%22%20viewBox=%220%200%20960%20540%22%20preserveAspectRatio=%22none%22%3E%3Crect%20width=%22960%22%20height=%2218%22%20fill=%22%23c2410c%22/%3E%3Cpath%20d=%22M0%20540V470Q240%20420%20480%20470T960%20450V540Z%22%20fill=%22%23f3e9dc%22/%3E%3Ccircle%20cx=%2260%22%20cy=%22490%22%20r=%2224%22%20fill=%22%23c2410c%22/%3E%3C/svg%3E'
 ---
 
 # A second oven
@@ -86,6 +95,14 @@ All in, with a week closed
 > The queue is the best advert we have, and the worst welcome.
 
 Léa, on Saturdays
+
+---
+layout: banner
+---
+
+## Art behind the words
+
+A band and a wave, as a template draws them, on PowerPoint's layout too.
 
 ---
 layout: big-question

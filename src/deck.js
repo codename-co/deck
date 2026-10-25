@@ -8,7 +8,7 @@
 // the deck changes or is saved.
 import { parseDeck } from './parse.js'
 import { renderSlide, h } from './render.js'
-import { tokensOf, schemeOf, VOICES, hex, contrast } from './look.js'
+import { tokensOf, schemeOf, VOICES, rgbOf, contrast } from './look.js'
 import { mergeKits } from './kit.js'
 import { stringsFor } from './strings.js'
 import { Lexer } from 'marked'
@@ -108,7 +108,7 @@ export function createDeck(root, options) {
     })) root.style.setProperty(`--deck-${name}`, value)
     root.dataset.scheme = scheme
     // Whether the primary as a fill is dark, for a logo's dark one there.
-    root.dataset.fill = ((fill) => (contrast(fill, [255, 255, 255]) > contrast(fill, [0, 0, 0]) ? 'dark' : 'light'))(hex(tokens.primary) ?? [247, 197, 49])
+    root.dataset.fill = ((fill) => (contrast(fill, [255, 255, 255]) > contrast(fill, [0, 0, 0]) ? 'dark' : 'light'))(rgbOf(tokens.primary) ?? [247, 197, 49])
     root.dispatchEvent(new CustomEvent('deck-scheme', { detail: { scheme, colours, tokens } }))
   }
   const chooseScheme = () => {

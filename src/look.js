@@ -41,12 +41,12 @@ export function tokensOf(settings, project = {}) {
 function clean(given) {
   /** @type {Partial<Tokens>} */
   const kept = {}
-  for (const key of /** @type {const} */ (['paper', 'ink', 'primary', 'muted', 'soft'])) if (typeof given[key] === 'string' && hex(given[key])) kept[key] = given[key]
-  if (given.dark && typeof given.dark === 'object') kept.dark = Object.fromEntries(Object.entries(given.dark).filter(([, v]) => typeof v === 'string' && hex(v)))
+  for (const key of /** @type {const} */ (['paper', 'ink', 'primary', 'muted', 'soft'])) if (typeof given[key] === 'string' && rgbOf(given[key])) kept[key] = given[key]
+  if (given.dark && typeof given.dark === 'object') kept.dark = Object.fromEntries(Object.entries(given.dark).filter(([, v]) => typeof v === 'string' && rgbOf(v)))
   if (given.fonts && Array.isArray(given.fonts.heading) && Array.isArray(given.fonts.body)) kept.fonts = { heading: given.fonts.heading.map(String), body: given.fonts.body.map(String) }
   if (typeof given.voice === 'string') kept.voice = given.voice
   if (typeof given.radius === 'number') kept.radius = given.radius
-  if (Array.isArray(given.series) && given.series.length && given.series.every((/** @type {unknown} */ c) => typeof c === 'string' && hex(c))) kept.series = given.series.slice(0, 6)
+  if (Array.isArray(given.series) && given.series.length && given.series.every((/** @type {unknown} */ c) => typeof c === 'string' && rgbOf(c))) kept.series = given.series.slice(0, 6)
   return kept
 }
 
@@ -55,30 +55,36 @@ function clean(given) {
  * @param {Tokens} tokens @param {'light' | 'dark'} scheme @returns {Scheme}
  */
 export function schemeOf(tokens, scheme) {
-  const light = hex(tokens.paper) ?? [255, 253, 248], dark = hex(tokens.ink) ?? [29, 27, 22]
+  // A see-through colour is seen over the paper it is on.
+  const light = rgbOf(tokens.paper) ?? [255, 253, 248], dark = rgbOf(tokens.ink, light) ?? [29, 27, 22]
   // A kit's own dark colours where it gives them (a design system's dark mode), else worked out.
   const own = scheme === 'dark' ? tokens.dark ?? {} : {}
-  const paper = round(hex(own.paper ?? '') ?? (scheme === 'dark' ? mix(dark, [0, 0, 0], 0.35) : light))
-  const ink = round(hex(own.ink ?? '') ?? (scheme === 'dark' ? mix(light, [255, 255, 255], 0.2) : dark))
-  const primary = hex(own.primary ?? tokens.primary) ?? [247, 197, 49]
+  const paper = round(rgbOf(own.paper ?? '', scheme === 'dark' ? [0, 0, 0] : [255, 255, 255]) ?? (scheme === 'dark' ? mix(dark, [0, 0, 0], 0.35) : light))
+  const ink = round(rgbOf(own.ink ?? '', paper) ?? (scheme === 'dark' ? mix(light, [255, 255, 255], 0.2) : dark))
+  const primary = rgbOf(own.primary ?? tokens.primary, paper) ?? [247, 197, 49]
   // The primary as a fill keeps its own colour; as words or marks it is made to read on the paper.
   const text = readable(primary, paper, 4.5)
   const onPrimary = contrast(ink, primary) >= contrast(paper, primary) ? ink : paper
   // A chart's colours: the kit's own (a template's accents), else the primary turned round the wheel; each made to read at 3:1.
-  const given = (tokens.series ?? []).map(hex).filter((c) => c !== null)
+  const given = (tokens.series ?? []).map((c) => rgbOf(c, paper)).filter((c) => c !== null)
   const series = [0, 1, 2, 3, 4, 5].map((n) => readable(/** @type {number[]} */ (given[n % (given.length || 1)] ?? rotate(primary, n * 57)), paper, 3))
   return {
-    paper: css(paper), ink: css(ink), muted: css(readable(round(hex(own.muted ?? (scheme === 'light' ? tokens.muted ?? '' : '')) ?? mix(ink, paper, 0.38)), paper, 4.5)), line: css(mix(ink, paper, 0.82)),
-    primary: css(text), onPrimary: css(onPrimary), soft: css(hex(own.soft ?? (scheme === 'light' ? tokens.soft ?? '' : '')) ?? mix(primary, paper, 0.78)), series: series.map(css),
+    paper: css(paper), ink: css(ink), muted: css(readable(round(rgbOf(own.muted ?? (scheme === 'light' ? tokens.muted ?? '' : ''), paper) ?? mix(ink, paper, 0.38)), paper, 4.5)), line: css(mix(ink, paper, 0.82)),
+    primary: css(text), onPrimary: css(onPrimary), soft: css(rgbOf(own.soft ?? (scheme === 'light' ? tokens.soft ?? '' : ''), paper) ?? mix(primary, paper, 0.78)), series: series.map(css),
   }
 }
 
-/** @param {string} value @returns {[number, number, number] | null} */
-export function hex(value) {
-  const m = /^#?([\da-f]{3}|[\da-f]{6})$/i.exec(String(value).trim())
-  if (!m) return null
-  const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]
-  return /** @type {[number, number, number]} */ ([0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)))
+/**
+ * A colour as deck reads one, as red, green and blue: `#rgb` or `#rrggbb` (`#rgba`, `#rrggbbaa` with an alpha), `rgb()` or
+ * `rgba()` as CSS writes them, by commas or spaces, the alpha after a comma or a slash; one see-through is seen over `under`,
+ * white unless said. @param {string} value @param {number[]} [under] @returns {[number, number, number] | null}
+ */
+export function rgbOf(value, under = [255, 255, 255]) {
+  const text = String(value).trim(), digits = /^#?([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(text)?.[1], css = /^rgba?\(([^)]*)\)$/i.exec(text)?.[1].split(/[\s,/]+/).filter(Boolean)
+  const share = (/** @type {string} */ part, /** @type {number} */ whole) => (part.endsWith('%') ? (parseFloat(part) / 100) * whole : Number(part))
+  const [r, g, b, a = 1] = digits ? (digits.length < 5 ? [...digits].map((c) => c + c) : /** @type {string[]} */ (digits.match(/../g))).map((h, i) => parseInt(h, 16) / (i > 2 ? 255 : 1))
+    : css?.length === 3 || css?.length === 4 ? css.map((part, i) => share(part, i > 2 ? 1 : 255)) : []
+  return r !== undefined && [r, g, b].every((c) => c >= 0 && c <= 255) && a >= 0 && a <= 1 ? round(mix(under, [r, g, b], a)) : null
 }
 
 /** @param {number[]} rgb */

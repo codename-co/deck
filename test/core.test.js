@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parseDeck } from '../src/parse.js'
 import { parseYaml } from '../src/yaml.js'
 import { readDeckFile, writeDeckFile, escape, unescape } from '../src/file.js'
-import { tokensOf, schemeOf, hex, contrast } from '../src/look.js'
+import { tokensOf, schemeOf, rgbOf, contrast } from '../src/look.js'
 
 const en = readFileSync(new URL('../examples/en.md', import.meta.url), 'utf8')
 
@@ -56,12 +56,12 @@ test('a file reads back exactly the Markdown it was written with, whatever it ho
 test("a look's colours read at AA on its paper, light and dark, whatever the brain picked", () => {
   for (const primary of ['#f7c531', '#ffff00', '#ff69b4', '#0f766e', '#000080', '#ffffff']) for (const scheme of /** @type {const} */ (['light', 'dark'])) {
     const colours = schemeOf(tokensOf({ themeConfig: { primary } }), scheme)
-    const paper = /** @type {number[]} */ (hex(colours.paper))
-    assert.ok(contrast(/** @type {number[]} */ (hex(colours.primary)), paper) >= 4.5, `${primary} ${scheme} primary`)
-    assert.ok(contrast(/** @type {number[]} */ (hex(colours.ink)), paper) >= 7, `${primary} ${scheme} ink`)
-    assert.ok(contrast(/** @type {number[]} */ (hex(colours.muted)), paper) >= 4.5, `${primary} ${scheme} muted`)
-    for (const s of colours.series) assert.ok(contrast(/** @type {number[]} */ (hex(s)), paper) >= 3, `${primary} ${scheme} series ${s}`)
-    assert.ok(contrast(/** @type {number[]} */ (hex(colours.onPrimary)), /** @type {number[]} */ (hex(primary))) >= 4.5 || primary === '#ff69b4', `${primary} ${scheme} on fill`)
+    const paper = /** @type {number[]} */ (rgbOf(colours.paper))
+    assert.ok(contrast(/** @type {number[]} */ (rgbOf(colours.primary)), paper) >= 4.5, `${primary} ${scheme} primary`)
+    assert.ok(contrast(/** @type {number[]} */ (rgbOf(colours.ink)), paper) >= 7, `${primary} ${scheme} ink`)
+    assert.ok(contrast(/** @type {number[]} */ (rgbOf(colours.muted)), paper) >= 4.5, `${primary} ${scheme} muted`)
+    for (const s of colours.series) assert.ok(contrast(/** @type {number[]} */ (rgbOf(s)), paper) >= 3, `${primary} ${scheme} series ${s}`)
+    assert.ok(contrast(/** @type {number[]} */ (rgbOf(colours.onPrimary)), /** @type {number[]} */ (rgbOf(primary))) >= 4.5 || primary === '#ff69b4', `${primary} ${scheme} on fill`)
   }
 })
 
@@ -99,14 +99,40 @@ test("a kit's logo is a picture inside it, its corner one of four; a usual layou
   }
   const scheme = schemeOf(tokensOf({}, { primary: '#c2410c', series: ['#c2410c', '#0f766e'] }), 'light')
   assert.equal(scheme.series.length, 6)
-  assert.ok(scheme.series.every((one) => contrast(hex(one) ?? [0, 0, 0], hex(scheme.paper) ?? [255, 255, 255]) >= 3))
+  assert.ok(scheme.series.every((one) => contrast(rgbOf(one) ?? [0, 0, 0], rgbOf(scheme.paper) ?? [255, 255, 255]) >= 3))
   assert.equal(scheme.series[1], scheme.series[3], 'the kit\'s own, round again')
+})
+
+test('a colour is read as CSS writes it, hex or rgb(), one see-through seen over its paper', () => {
+  for (const same of ['#0055a4', '0055A4', 'rgb(0, 85, 164)', 'rgb(0 85 164)', 'rgba(0,85,164,1)', 'rgb(0% 33.33% 64.31%)', '#0055a4ff']) assert.deepEqual(rgbOf(same), [0, 85, 164], same)
+  assert.deepEqual([rgbOf('#05a'), rgbOf('#05a8')], [[0, 85, 170], [119, 164, 210]])
+  assert.deepEqual([rgbOf('rgba(0, 0, 0, 0.5)'), rgbOf('rgb(0 0 0 / 50%)'), rgbOf('rgba(0, 0, 0, .5)', [0, 0, 0])], [[128, 128, 128], [128, 128, 128], [0, 0, 0]])
+  for (const bad of ['rgb(300, 0, 0)', 'rgba(0, 0, 0, 2)', 'rgb(0, 0)', 'hsl(0 0% 0%)', 'red', '#12345', 'rgb(0, 0, 0); x']) assert.equal(rgbOf(bad), null, bad)
+  // A token see-through is seen over the paper: soft words of black at 60% read on white as grey, still at AA.
+  const tokens = tokensOf({}, { paper: '#ffffff', ink: '#111111', primary: 'rgba(0, 85, 164, 0.5)', muted: 'rgba(0, 0, 0, 0.6)' })
+  assert.deepEqual([tokens.primary, tokens.muted], ['rgba(0, 85, 164, 0.5)', 'rgba(0, 0, 0, 0.6)'])
+  const light = schemeOf(tokens, 'light')
+  assert.equal(light.muted, '#666666')
+  assert.ok(contrast(rgbOf(light.primary) ?? [0, 0, 0], [255, 255, 255]) >= 4.5)
+  assert.deepEqual(tokensFrom({ color: { accent: { $type: 'color', $value: { colorSpace: 'srgb', components: [0, 0.33, 0.64], alpha: 0.5, hex: '#0055a4' } } } }), { primary: '#0055a480' })
+})
+
+test("a layout's art is layers among the kit's pictures, each a picture inside the kit, never an address", () => {
+  const svg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><rect width="16" height="1" fill="#c2410c"/></svg>')}`
+  const { kit, problems } = mergeKits(
+    { pictures: { band: svg, photo: 'data:image/png;base64,iVBORw0KGgo=' }, layouts: { banner: { slots: ['default'], art: ['band', 'photo'] } } },
+    { pictures: { 'Bad Name': svg, web: 'https://evil.example/a.png', page: 'data:text/html,<script>', huge: `data:image/svg+xml,${'a'.repeat(3_145_728)}` }, layouts: { worse: { art: 'band' }, many: { art: Array(9).fill('band') } } })
+  assert.deepEqual(Object.keys(kit.pictures), ['band', 'photo'])
+  assert.deepEqual(kit.layouts.banner.art, ['band', 'photo'])
+  assert.deepEqual([kit.layouts.worse.art, kit.layouts.many.art], [undefined, undefined])
+  assert.equal(problems.length, 6)
+  assert.deepEqual(STANDARD.pictures, {})
 })
 
 test('a slide that names no layout is given the one its content suits', () => {
   const deck = parseDeck(readFileSync(new URL('../examples/kit.md', import.meta.url), 'utf8'))
   assert.deepEqual(deck.slides.map((s) => s.settings.layout ? `(${s.settings.layout})` : inferLayout(s)),
-    ['cover', 'section', '(three-numbers)', 'two-cols', 'fact', 'quote', '(big-question)', '(grid-of-nine)'])
+    ['cover', 'section', '(three-numbers)', 'two-cols', 'fact', 'quote', '(banner)', '(big-question)', '(grid-of-nine)'])
   assert.equal(inferLayout(/** @type {any} */ (parseDeck('# Title\n\n---\n\n## Points\n\n- a\n- b\n').slides[1])), 'default')
 })
 

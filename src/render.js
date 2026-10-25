@@ -43,11 +43,14 @@ export function renderSlide(slide, context) {
   const counter = { step: 0 }
   const slots = new Map(slide.slots.map((slot) => [slot.name, slot]))
   const names = definition.slots
+  const art = (definition.art ?? []).map((name) => context.kit.pictures?.[name]).filter(Boolean)
   const section = h('section', {
-    class: ['deck-slide', `deck-layout-${layout}`, ...classes.map((name) => `deck-class-${name}`)].join(' '),
+    class: ['deck-slide', `deck-layout-${layout}`, ...classes.map((name) => `deck-class-${name}`), ...(art.length ? ['has-art'] : [])].join(' '),
     'data-index': slide.index, 'data-layout': layout, 'data-paper': definition.paper, 'data-align': definition.align, 'data-justify': definition.justify, 'data-title': definition.title,
     'aria-roledescription': context.slide, role: 'group',
   })
+  // Its art, as its template draws it, layer over layer behind the rest.
+  for (const src of art) section.append(h('img', { class: 'deck-art', src, alt: '', 'aria-hidden': 'true' }))
   // Its grid, from the layout's definition, through the CSSOM: areas named s-<slot>, as `default` is no name CSS allows.
   const canvas = h('div', { class: 'deck-canvas' })
   canvas.style.setProperty('grid-template-areas', definition.areas.map((row) => `"${row.map((cell) => (cell === '.' ? '.' : `s-${cell}`)).join(' ')}"`).join(' '))

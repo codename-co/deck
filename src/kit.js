@@ -3,13 +3,14 @@
 // deck's own kit holds the usual layouts; a host's (an organisation's, a project's) and the deck
 // file's own `kit:` go over it, in that order. A layout is a grid: its slots by name, the areas
 // they take, its tracks, how its words sit, what paper it is on, how big its logo shows, and the
-// PowerPoint layout it is nearest to; a kit may turn one of the usual layouts off. Its tokens may
-// hold a logo, a picture inside the kit and never an address. Everything is checked against a small
-// grammar; what fails is dropped, with a reason. Pure.
+// PowerPoint layout it is nearest to, and the art a template draws behind it, layers among the kit's
+// pictures; a kit may turn one of the usual layouts off. Its tokens may hold a logo, a picture inside
+// the kit and never an address, as its pictures are. Everything is checked against a small grammar;
+// what fails is dropped, with a reason. Pure.
 
 /** @typedef {{ required?: boolean, max_words?: number, max_chars?: number, items?: [number, number], item_max_words?: number, heading_max_words?: number, kind?: string }} Budget */
-/** @typedef {{ label?: Record<string, string> | string, intent?: string, use_when?: string, avoid_when?: string, slots: string[], budgets: Record<string, Budget>, areas: string[][], columns: string[], rows: string[], align: 'start' | 'center' | 'end', justify: 'start' | 'center' | 'end', paper: 'paper' | 'fill' | 'ink' | 'soft', title: 'normal' | 'large' | 'huge', logo: 'big' | 'small' | 'none', pptx: string, numbered: boolean }} Layout */
-/** @typedef {{ name?: string, tokens: Record<string, any>, layouts: Record<string, Layout> }} Kit */
+/** @typedef {{ label?: Record<string, string> | string, intent?: string, use_when?: string, avoid_when?: string, slots: string[], budgets: Record<string, Budget>, areas: string[][], columns: string[], rows: string[], align: 'start' | 'center' | 'end', justify: 'start' | 'center' | 'end', paper: 'paper' | 'fill' | 'ink' | 'soft', title: 'normal' | 'large' | 'huge', logo: 'big' | 'small' | 'none', pptx: string, numbered: boolean, art?: string[] }} Layout */
+/** @typedef {{ name?: string, tokens: Record<string, any>, layouts: Record<string, Layout>, pictures: Record<string, string> }} Kit */
 
 const NAME = /^[a-z][a-z0-9-]{0,31}$/
 const TRACK = /^(auto|min-content|max-content|\d{1,2}(\.\d)?fr|\d{1,3}%)$/
@@ -24,6 +25,12 @@ export const CORNERS = ['top-end', 'top-start', 'bottom-end', 'bottom-start']
  */
 export const logoOf = (value) => (typeof value === 'string' && value.length <= 700_000 && /^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[a-z0-9+/]+=*$/i.test(value) ? value : null)
 
+/**
+ * A picture of a kit's, a layer of a layout's art drawn behind its words over the whole slide: a picture inside the kit as a
+ * logo is, or an SVG written out (`data:image/svg+xml,…`), of 3 MB at most, never an address to fetch; else null. @param {unknown} value
+ */
+export const artOf = (value) => (typeof value === 'string' && value.length <= 3_145_728 && /^data:image\/(?:(?:png|jpeg|gif|webp|svg\+xml);base64,[a-z0-9+/]+=*|svg\+xml,[\w.!~*'()%/+=-]*)$/i.test(value) ? value : null)
+
 /** The names brains give the usual layouts, for the ones deck has. */
 export const ALIASES = /** @type {Record<string, string>} */ ({
   title: 'cover', 'title-slide': 'cover', 'two-columns': 'two-cols', 'two-column': 'two-cols', columns: 'two-cols', comparison: 'two-cols-header',
@@ -34,6 +41,7 @@ export const ALIASES = /** @type {Record<string, string>} */ ({
 export const STANDARD = /** @type {Kit} */ ({
   name: 'standard',
   tokens: {},
+  pictures: {},
   layouts: Object.fromEntries(Object.entries(/** @type {Record<string, any>} */ ({
     default: { label: { en: 'Title and content', fr: 'Titre et contenu' }, pptx: 'Title and Content' },
     cover: { label: { en: 'Cover', fr: 'Couverture' }, justify: 'center', paper: 'fill', title: 'huge', logo: 'big', pptx: 'Title Slide', numbered: false },
@@ -98,12 +106,14 @@ export function layoutOf(given) {
     return value
   }
   const label = typeof given.label === 'string' || (given.label && typeof given.label === 'object') ? given.label : undefined
+  const art = Array.isArray(given.art) && given.art.length <= 8 && given.art.every((/** @type {unknown} */ one) => typeof one === 'string' && NAME.test(one)) ? given.art : undefined
+  if (given.art !== undefined && !art) problems.push('art is not 8 names at most')
   const words = (/** @type {any} */ v) => (typeof v === 'string' ? v.slice(0, 300) : undefined)
   return {
     layout: /** @type {Layout} */ ({
       label, intent: words(given.intent), use_when: words(given.use_when), avoid_when: words(given.avoid_when), slots, budgets, areas: rows, columns, rows: rowTracks,
       align: pick('align', 'start'), justify: pick('justify', 'start'), paper: pick('paper', 'paper'), title: pick('title', 'normal'), logo: pick('logo', 'small'),
-      pptx: PPTX.includes(given.pptx) ? given.pptx : slots.length > 1 ? 'Comparison' : 'Title and Content', numbered: given.numbered !== false,
+      pptx: PPTX.includes(given.pptx) ? given.pptx : slots.length > 1 ? 'Comparison' : 'Title and Content', numbered: given.numbered !== false, art,
     }),
     problems,
   }
@@ -123,14 +133,15 @@ function clean(given) {
 /**
  * Design tokens as the W3C's Design Tokens format (DTCG 2025.10) writes them, read into a kit's:
  * `color.light` and `color.dark` groups (bg, surface, fg, muted, accent) or flat colours, `font.sans`
- * and the like; each `$value` a hex string or a colour object with its `hex`. Tokens already flat
+ * and the like; each `$value` a colour string or a colour object with its `hex` and `alpha`. Tokens already flat
  * pass through. @param {any} given @returns {Record<string, any>}
  */
 export function tokensFrom(given) {
   if (!given || typeof given !== 'object') return {}
   if (!JSON.stringify(given).includes('"$value"')) return given
   const value = (/** @type {any} */ t) => (t && typeof t === 'object' && '$value' in t ? t.$value : t)
-  const colour = (/** @type {any} */ t) => { const v = value(t); return typeof v === 'string' ? v : typeof v?.hex === 'string' ? v.hex : undefined }
+  // A colour object's alpha kept, as #rrggbbaa.
+  const colour = (/** @type {any} */ t) => { const v = value(t); return typeof v === 'string' ? v : typeof v?.hex === 'string' ? `${v.hex}${typeof v.alpha === 'number' && v.alpha < 1 ? Math.round(Math.max(0, v.alpha) * 255).toString(16).padStart(2, '0') : ''}` : undefined }
   const face = (/** @type {any} */ t) => { const v = value(t); return Array.isArray(v) ? v.map(String) : typeof v === 'string' ? [v] : undefined }
   const NAMES = /** @type {const} */ ({ bg: 'paper', background: 'paper', paper: 'paper', fg: 'ink', text: 'ink', ink: 'ink', accent: 'primary', primary: 'primary', muted: 'muted', surface: 'soft', soft: 'soft' })
   const group = (/** @type {any} */ g) => Object.fromEntries(Object.entries(g ?? {}).filter(([k]) => k in NAMES).map(([k, t]) => [NAMES[/** @type {keyof typeof NAMES} */ (k)], colour(t)]).filter(([, v]) => v))
@@ -146,13 +157,13 @@ export function tokensFrom(given) {
 }
 
 /**
- * Kits merged, the later over the earlier: their tokens, their dark ones within theirs, and their layouts by name, each
- * checked; a layout given as false is taken away, but the default. A logo that isn't a picture inside the kit is dropped.
- * @param {...any} kits @returns {{ kit: Kit, problems: string[] }}
+ * Kits merged, the later over the earlier: their tokens, their dark ones within theirs, their layouts by name and their
+ * pictures, each checked; a layout given as false is taken away, but the default. A logo that isn't a picture inside the
+ * kit is dropped. @param {...any} kits @returns {{ kit: Kit, problems: string[] }}
  */
 export function mergeKits(...kits) {
   /** @type {Kit} */
-  const kit = { name: 'standard', tokens: {}, layouts: { ...STANDARD.layouts } }
+  const kit = { name: 'standard', tokens: {}, layouts: { ...STANDARD.layouts }, pictures: {} }
   const problems = []
   for (const given of kits) {
     if (!given || typeof given !== 'object') continue
@@ -160,6 +171,10 @@ export function mergeKits(...kits) {
     if (given.tokens && typeof given.tokens === 'object') {
       const next = tokensFrom(given.tokens), dark = next.dark && typeof next.dark === 'object' ? { ...kit.tokens.dark, ...next.dark } : kit.tokens.dark
       kit.tokens = { ...kit.tokens, ...next, ...(dark && { dark }) }
+    }
+    for (const [name, picture] of Object.entries(given.pictures ?? {})) {
+      if (NAME.test(name) && artOf(picture)) kit.pictures[name] = picture
+      else problems.push(`picture ${name}: not a picture inside the kit`)
     }
     for (const [name, definition] of Object.entries(given.layouts ?? given.types ?? {})) {
       if (!NAME.test(name)) { problems.push(`layout ${name}: not a-z, 0-9 and -`); continue }

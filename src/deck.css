@@ -58,6 +58,13 @@
 :is(.deck[data-scheme="light"] :is(.deck-slide[data-paper="ink"], .deck-class-invert), .deck[data-scheme="dark"] .deck-slide:is([data-paper="paper"], [data-paper="soft"]):not(.deck-class-invert), .deck[data-fill="dark"] .deck-slide[data-paper="fill"]) .deck-logo.is-dark { display: block; }
 :is(.deck[data-scheme="light"] :is(.deck-slide[data-paper="ink"], .deck-class-invert), .deck[data-scheme="dark"] .deck-slide:is([data-paper="paper"], [data-paper="soft"]):not(.deck-class-invert), .deck[data-fill="dark"] .deck-slide[data-paper="fill"]) .deck-logo:not(.has-dark, .is-dark) { background: #fff; padding: 0.5cqi; border-radius: 0.5cqi; }
 
+/* A layout's art (docs/kits.md), as its template draws it, behind words that sit where the template has them: its grid edge to edge, the slide laid out left to right, its number too. */
+.deck-art { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
+.deck-slide.has-art { direction: ltr; }
+.has-art .deck-canvas { padding: 0; gap: 0; }
+.has-art .deck-slot { padding: 0.5cqi 1cqi; }
+.deck[dir="rtl"] .has-art .deck-slot { direction: rtl; }
+
 /* Layouts from their kit's definition: the paper they are on, where their words sit, how big their heading is. */
 .deck-slide[data-paper="fill"] { background: var(--deck-fill); color: var(--deck-on-fill); }
 .deck-slide[data-paper="ink"] { background: var(--deck-ink); color: var(--deck-paper); }

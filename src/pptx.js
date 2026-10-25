@@ -3,7 +3,7 @@
 // each of its slots, so a slide added there looks like the deck's; words as PowerPoint's own text,
 // a list's levels as its levels; a table as a table; a chart of bars, lines, areas, pies, rings,
 // points or a radar as PowerPoint's own chart, its numbers in the file to change; anything else (a
-// diagram, another chart, a picture) as a picture; the speaker's notes as notes; each slide's
+// diagram, another chart, a picture) as a picture, a layout's art too, on its slide layout; the speaker's notes as notes; each slide's
 // transition as PowerPoint's (Morph where it has one, a fade where it hasn't); the look's colours
 // as the file's theme. Read from the deck as drawn, each box where the browser put it, so the file
 // looks like the slides, in the scheme shown. PptxGenJS (with its JSZip) is the host's to load.
@@ -72,6 +72,9 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
     const masterName = `${definition ? labelOf(definition, layout, view.lang) : layout}${element.classList.contains('deck-class-invert') ? ' (dark)' : ''}`
     if (!masters.has(masterName)) {
       const objects = []
+      // The layout's art, its layers as one picture on its paper behind the rest: a slide added in PowerPoint has it too.
+      const art = [...element.querySelectorAll('img.deck-art')].map((one) => /** @type {HTMLImageElement} */ (one).src), backdrop = art.length && await pictureOf(art, W * 150, H * 150, false, style.backgroundColor)
+      if (backdrop) { objects.push({ image: { data: backdrop, x: 0, y: 0, w: W, h: H } }); report.pictures++ }
       if (title) objects.push({ placeholder: { options: { name: 'title', type: 'title', ...across(title), valign: 'bottom', margin: 0, fontFace: pres.theme.headFontFace, color: hexOf(getComputedStyle(title).color), align: rtl ? 'right' : 'left' }, text: '' } })
       for (const slot of slots) {
         const r = place(slot)
@@ -296,21 +299,34 @@ function transitionXml(kind, rtl) {
   return '<p:transition spd="med"><p:fade/></p:transition>'
 }
 
-/** A picture's data as PNG, drawn at a size; null when it can't be read (another site's, unshared). @param {string} src @param {number} w @param {number} h @param {boolean} [cover] */
-async function pictureOf(src, w, h, cover = false) {
+/**
+ * A picture's data as PNG, drawn at a size, or a layout's art, its layers, as JPEG on its paper; null when it can't be read
+ * (another site's, unshared). @param {string | string[]} src @param {number} w @param {number} h @param {boolean} [cover] @param {string} [paper]
+ */
+async function pictureOf(src, w, h, cover = false, paper = '') {
   try {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.src = src
-    await img.decode()
+    const images = await Promise.all([src].flat().map(async (one) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.src = one
+      await img.decode()
+      return img
+    }))
+    const img = images[0]
     const canvas = document.createElement('canvas')
     canvas.width = Math.max(1, Math.round(w))
     canvas.height = Math.max(1, Math.round(h))
     const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'))
     const iw = img.naturalWidth || w, ih = img.naturalHeight || h
     const scale = cover ? Math.max(canvas.width / iw, canvas.height / ih) : Math.min(canvas.width / iw, canvas.height / ih)
-    ctx.drawImage(img, (canvas.width - iw * scale) / 2, (canvas.height - ih * scale) / 2, iw * scale, ih * scale)
-    return canvas.toDataURL('image/png')
+    if (!paper) ctx.drawImage(img, (canvas.width - iw * scale) / 2, (canvas.height - ih * scale) / 2, iw * scale, ih * scale)
+    else {
+      // Art, stretched over the slide as it is drawn there, on its paper, as a JPEG: photographs stay small.
+      ctx.fillStyle = paper
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      for (const layer of images) ctx.drawImage(layer, 0, 0, canvas.width, canvas.height)
+    }
+    return canvas.toDataURL(paper ? 'image/jpeg' : 'image/png', 0.9)
   } catch {
     return null
   }
