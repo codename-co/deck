@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { writeDeckFile, readDeckFile } from '../src/file.js'
 import { parseDeck } from '../src/parse.js'
 const code = readFileSync(new URL('../dist/deck.js', import.meta.url), 'utf8')
-for (const name of ['en', 'ar', 'ja', 'tricky', 'kit']) {
+for (const name of ['en', 'ar', 'ja', 'tricky', 'kit', 'layouts']) {
   const markdown = readFileSync(new URL(`${name}.md`, import.meta.url), 'utf8')
   const { settings, slides } = parseDeck(markdown)
   const options = { title: String(settings.title ?? ''), lang: String(settings.lang ?? 'en'), dir: settings.lang === 'ar' ? 'rtl' : 'ltr', }

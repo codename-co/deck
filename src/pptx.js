@@ -3,7 +3,9 @@
 // each of its slots, so a slide added there looks like the deck's; words as PowerPoint's own text,
 // a list's levels as its levels; a table as a table; a chart of bars, lines, areas, pies, rings,
 // points or a radar as PowerPoint's own chart, its numbers in the file to change; a mind map as
-// PowerPoint's own shapes, its words in boxes joined by curves; anything else (a
+// PowerPoint's own shapes, its words in boxes joined by curves; a figure (cards, key figures, a
+// timeline, chevrons, a programme, a pyramid, a bento, parts face to face or in a matrix, the
+// deck's contents) as PowerPoint's own shapes and boxes of words, where the slide has them; anything else (a
 // diagram, another chart, a picture) as a picture, a layout's art too, on its slide layout; the speaker's notes as notes; each slide's
 // transition as PowerPoint's (Morph where it has one, a fade where it hasn't); the look's colours
 // as the file's theme. Read from the deck as drawn, each box where the browser put it, so the file
@@ -31,7 +33,7 @@ const alphaOf = (value) => { const m = /rgba\((?:[^,]*,){3}\s*([\d.]+)\s*\)|\/\s
 /**
  * @param {import('./deck.js').DeckView} view
  * @param {{ PptxGenJS: any, JSZip: any }} libraries
- * @returns {Promise<{ blob: Blob, report: { slides: number, charts: number, pictures: number, tables: number, placeholders: number, maps: number } }>}
+ * @returns {Promise<{ blob: Blob, report: { slides: number, charts: number, pictures: number, tables: number, placeholders: number, maps: number, figures: number } }>}
  */
 export async function toPptx(view, { PptxGenJS, JSZip }) {
   const pres = new PptxGenJS()
@@ -41,7 +43,7 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
   const rootStyle = getComputedStyle(view.root)
   const firstFont = (/** @type {string} */ stack) => stack.split(',').map((f) => f.trim().replace(/^["']|["']$/g, '')).find((f) => !/^(ui-|system-ui|-apple|sans-serif|serif|monospace)/.test(f)) ?? 'Arial'
   pres.theme = { headFontFace: firstFont(rootStyle.getPropertyValue('--deck-heading')), bodyFontFace: firstFont(rootStyle.getPropertyValue('--deck-body')) }
-  const report = { slides: 0, charts: 0, pictures: 0, tables: 0, placeholders: 0, maps: 0 }
+  const report = { slides: 0, charts: 0, pictures: 0, tables: 0, placeholders: 0, maps: 0, figures: 0 }
   const rtl = view.dir === 'rtl'
   const slides = view.slides()
   const masters = new Map()
@@ -121,6 +123,9 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
       const url = /url\("?(.*?)"?\)/.exec(getComputedStyle(background).backgroundImage)?.[1]
       const data = url && await pictureOf(url, background.clientWidth * 2, background.clientHeight * 2, true)
       if (data) { slide.addImage({ data, ...place(background) }); report.pictures++ }
+      // The veil over it, as a quote has: the words read on it.
+      const veil = getComputedStyle(background, '::after')
+      if (veil.content !== 'none' && alphaOf(veil.backgroundColor) > 0) slide.addShape(pres.shapes.RECTANGLE, { ...place(background), fill: { color: hexOf(veil.backgroundColor), transparency: Math.round((1 - alphaOf(veil.backgroundColor)) * 100) }, line: { type: 'none' } })
     }
     if (title && names.has('title')) {
       slide.addText(runs(title, { pt, rtl, lang: view.lang }), { placeholder: 'title' })
@@ -145,6 +150,9 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
         } else if (block.matches('.deck-mindmap')) {
           await mindmap(pres, slide, /** @type {HTMLElement} */ (block), place, { pt, rtl, lang: view.lang }, figure)
           report.maps++
+        } else if (block.matches('.deck-figure')) {
+          await drawing(pres, slide, block, place, { pt, rtl, lang: view.lang }, figure)
+          report.figures++
         } else await figure(block, at)
       }
     }
@@ -216,6 +224,57 @@ async function mindmap(pres, slide, map, place, how, figure) {
     if (label) slide.addText(words, { ...place(label), margin: 0, valign: 'middle', align: 'center', wrap: true })
     for (const block of node.querySelectorAll('.deck-block')) await figure(block, place(block))
   }
+}
+
+/**
+ * A figure as PowerPoint's own shapes, as the slide draws them: each shape (a card, a chevron, a level, a dot, a rule) its
+ * box, or its polygon, filled and outlined as on the slide, a side's rule a line; then each of its words a box of words
+ * where they are, a table as a table, a chart or a diagram as the slide's are.
+ * @param {any} pres @param {any} slide @param {Element} root @param {(el: Element) => { x: number, y: number, w: number, h: number }} place
+ * @param {{ pt: (px: number) => number, rtl: boolean, lang: string }} how
+ * @param {(block: Element, at: { x: number, y: number, w: number, h: number }) => Promise<void>} figure
+ */
+async function drawing(pres, slide, root, place, how, figure) {
+  const inches = (/** @type {number} */ px) => how.pt(px) / 72
+  // In the order the slide stacks them: a medallion over the parts it sits between.
+  const layer = (/** @type {Element} */ el) => parseInt(getComputedStyle(el).zIndex, 10) || 0
+  for (const shape of [...root.querySelectorAll('.deck-shape')].sort((a, b) => layer(a) - layer(b))) {
+    const style = getComputedStyle(shape), at = place(shape), box = shape.getBoundingClientRect()
+    const fill = alphaOf(style.backgroundColor) > 0 ? { color: hexOf(style.backgroundColor), transparency: Math.round((1 - alphaOf(style.backgroundColor)) * 100) } : undefined
+    const sides = /** @type {const} */ (['Top', 'Right', 'Bottom', 'Left']).map((side) => ({ side, width: parseFloat(style[`border${side}Width`]) || 0, colour: style[`border${side}Color`] })).map((one) => ({ ...one, width: alphaOf(one.colour) > 0 ? one.width : 0 }))
+    const even = sides.every((one) => Math.abs(one.width - sides[0].width) < 0.1)
+    const line = even && sides[0].width > 0 ? { color: hexOf(sides[0].colour), width: Math.round(how.pt(sides[0].width) * 10) / 10 } : { type: 'none' }
+    const polygon = /^polygon\((.*)\)$/.exec(style.clipPath)?.[1]
+    if (polygon && (fill || even && sides[0].width)) {
+      // Its points as the slide clips it: lengths and shares of its box, calc() as CSS writes it.
+      const length = (/** @type {string} */ text, /** @type {number} */ size) => [...text.replace(/^calc\(|\)$/g, '').matchAll(/([+-]?)\s*([\d.]+)(%|px)?/g)].reduce((sum, [, sign, n, unit]) => sum + (sign === '-' ? -1 : 1) * (unit === '%' ? (Number(n) / 100) * size : inches(Number(n))), 0)
+      const points = polygon.split(/,(?![^(]*\))/).map((pair) => pair.trim().match(/calc\([^)]*\)|[-\d.]+(?:%|px)?/g) ?? []).map(([x = '0', y = '0']) => ({ x: length(x, at.w), y: length(y, at.h) }))
+      slide.addShape(pres.shapes.CUSTOM_GEOMETRY, { ...at, fill, line, points: [...points, { close: true }] })
+    } else if (fill || line.width) {
+      const radius = style.borderTopLeftRadius.endsWith('%') ? (Math.min(box.width, box.height) * parseFloat(style.borderTopLeftRadius)) / 100 : parseFloat(style.borderTopLeftRadius) || 0
+      const round = radius >= Math.min(box.width, box.height) / 2 - 0.5
+      const kind = round && Math.abs(box.width - box.height) < 1 ? pres.shapes.OVAL : radius > 0 ? pres.shapes.ROUNDED_RECTANGLE : pres.shapes.RECTANGLE
+      slide.addShape(kind, { ...at, fill, line, ...(kind === pres.shapes.ROUNDED_RECTANGLE ? { rectRadius: Math.min(at.h / 2, at.w / 2, inches(radius)) } : {}) })
+    }
+    // A rule on one side alone, as a line.
+    if (!even) for (const { side, width, colour } of sides) {
+      if (!width) continue
+      const thick = inches(width)
+      const edge = { Top: { x: at.x, y: at.y + thick / 2, w: at.w, h: 0 }, Bottom: { x: at.x, y: at.y + at.h - thick / 2, w: at.w, h: 0 }, Left: { x: at.x + thick / 2, y: at.y, w: 0, h: at.h }, Right: { x: at.x + at.w - thick / 2, y: at.y, w: 0, h: at.h } }[side]
+      slide.addShape(pres.shapes.LINE, { ...edge, line: { color: hexOf(colour), width: Math.round(how.pt(width) * 10) / 10 } })
+    }
+  }
+  for (const words of root.querySelectorAll('.deck-words')) {
+    if (words.parentElement?.closest('.deck-words') || !words.textContent?.trim()) continue
+    const style = getComputedStyle(words), at = place(words)
+    const align = style.textAlign === 'center' ? 'center' : style.textAlign === 'left' || style.textAlign === 'right' ? style.textAlign : (style.textAlign === 'end') !== how.rtl ? 'right' : 'left'
+    // PowerPoint sets type a little wider than a browser: words grow away from where they are aligned.
+    const wide = at.w * 0.08, x = align === 'left' ? at.x : align === 'right' ? at.x - wide : at.x - wide / 2
+    // Words in a shape of their own (a number in its circle) in its middle; others from their top, as their lines may be fewer.
+    slide.addText(runs(words, how).map((run) => ({ ...run, options: { ...run.options, align } })), { x, y: at.y, w: at.w + wide, h: at.h, margin: 0, valign: words.matches('.deck-shape') ? 'middle' : 'top', align, wrap: true })
+  }
+  for (const one of root.querySelectorAll('.deck-table')) table(slide, one, place(one), how)
+  for (const block of root.querySelectorAll('.deck-block')) await figure(block, place(block))
 }
 
 /** A slot's paragraphs' spacing, from the space under its first block. @param {HTMLElement} slot */

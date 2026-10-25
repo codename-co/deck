@@ -65,7 +65,7 @@ test("a look's colours read at AA on its paper, light and dark, whatever the bra
   }
 })
 
-import { mergeKits, layoutOf, inferLayout, STANDARD } from '../src/kit.js'
+import { mergeKits, layoutOf, inferLayout, layoutNameOf, STANDARD } from '../src/kit.js'
 
 test("a kit's layouts are checked against the grammar, and nothing but layout gets in", () => {
   assert.ok(layoutOf({ slots: ['default', 'one', 'two'], areas: 'default default | one two', rows: 'auto 1fr' }).layout)
@@ -80,9 +80,13 @@ test("a kit's layouts are checked against the grammar, and nothing but layout ge
   assert.ok(kit.layouts.good && kit.layouts['two-cols'] && !kit.layouts.worse)
   assert.equal(problems.length, 2)
   assert.equal(kit.tokens.primary, '#c2410c')
-  assert.equal(Object.keys(STANDARD.layouts).length, 18)
+  assert.equal(Object.keys(STANDARD.layouts).length, 29)
   assert.deepEqual([STANDARD.layouts.mindmap.lists, STANDARD.layouts.default.lists], ['mindmap', 'bullets'])
-  assert.equal(layoutOf({ lists: 'tree' }).problems[0], 'lists tree is not one of bullets, mindmap')
+  assert.equal(layoutOf({ lists: 'tree' }).problems[0], 'lists tree is not one of bullets, mindmap, steps, metrics, timeline, process, agenda, pyramid, bento')
+  assert.deepEqual(['steps', 'metrics', 'timeline', 'process', 'agenda', 'pyramid', 'bento'].map((name) => STANDARD.layouts[name].lists), ['steps', 'metrics', 'timeline', 'process', 'agenda', 'pyramid', 'bento'])
+  assert.deepEqual([STANDARD.layouts.versus.parts, STANDARD.layouts.matrix.parts, STANDARD.layouts.default.parts], ['versus', 'matrix', 'none'])
+  assert.deepEqual([STANDARD.layouts.summary.contents, STANDARD.layouts.default.contents, layoutOf({ contents: 'yes' }).layout?.contents], [true, false, false])
+  assert.equal(layoutOf({ parts: 'grid' }).problems[0], 'parts grid is not one of none, versus, matrix')
 })
 
 test("a kit's logo is a picture inside it, its corner one of four; a usual layout turned off goes; dark tokens merge; a chart's colours its own", () => {
@@ -284,4 +288,55 @@ test("a fence's options, as Slidev writes them or as JSON, reach its drawer", ()
   assert.deepEqual(optionsOf("mermaid {theme: 'neutral', scale: 0.8}"), { theme: 'neutral', scale: 0.8 })
   assert.deepEqual(optionsOf('mermaid {"flowchart": {"curve": "linear"}}'), { flowchart: { curve: 'linear' } })
   assert.deepEqual([optionsOf('echarts'), optionsOf('mermaid {broken')], [{}, {}])
+})
+
+import { entriesOf, leadOf, partHeads, contentsOf, boldLines } from '../src/figures.js'
+import { Lexer } from 'marked'
+
+const lex = (/** @type {string} */ markdown) => new Lexer({ gfm: true }).lex(markdown)
+/** An entry's lead and words, as their source says them, and the words drawn. @param {string} source @param {any} split */
+const said = (source, split) => [split.leadAt && source.slice(...split.leadAt), split.restAt && source.slice(...split.restAt), split.rest.map((/** @type {any} */ t) => t.raw).join('')]
+
+test("a figure's items are a list's or lines in bold, each its lead and its words, where they are in the source", () => {
+  const source = '## Day\n\n- **6:00 PM** — Doors & drinks\n- **Q1**: Fit\n  - the oven\n- 7:30 am Dinner\n- 56% of people\n- Just words\n'
+  const [, , list] = lex(source)
+  const entries = entriesOf(list, source.indexOf('- **6'), lex)
+  assert.equal(entries.length, 5)
+  assert.deepEqual(said(source, leadOf(entries[0], 'agenda')), ['6:00 PM', 'Doors & drinks', 'Doors & drinks'])
+  assert.deepEqual(said(source, leadOf(entries[1], 'timeline')), ['Q1', 'Fit', 'Fit'])
+  assert.deepEqual(entries[1].blocks.map(({ token, start }) => [token.type, source.slice(start, start + token.raw.length)]), [['list', '- the oven']])
+  // A time leads a programme's line, a number a key figure's, without bold; not elsewhere.
+  assert.deepEqual(said(source, leadOf(entries[2], 'agenda')), ['7:30 am', 'Dinner', 'Dinner'])
+  assert.deepEqual(said(source, leadOf(entries[2], 'steps')), [null, '7:30 am Dinner', '7:30 am Dinner'])
+  assert.deepEqual(said(source, leadOf(entries[3], 'metrics')), ['56%', 'of people', 'of people'])
+  assert.deepEqual(said(source, leadOf(entries[4], 'process')), [null, 'Just words', 'Just words'])
+  // Key figures written as lines in bold.
+  const lines = '**56%** of people\n**3×** faster\n**4.8**'
+  const [paragraph] = lex(lines)
+  assert.ok(boldLines(paragraph) && !boldLines(lex('**56%** of people\nand more')[0]))
+  const figures = entriesOf(paragraph, 0, lex).map((entry) => said(lines, leadOf(entry, 'metrics')))
+  assert.deepEqual(figures, [['56%', 'of people', 'of people'], ['3×', 'faster', 'faster'], ['4.8', null, '']])
+  // Words over two lines are drawn, but not changed in place.
+  const long = lex('- **A** one\n  two\n')[0]
+  assert.deepEqual(said('- **A** one\n  two\n', leadOf(entriesOf(long, 0, lex)[0], 'steps')).slice(0, 2), [null, null])
+})
+
+test("a slot's parts start at its headings of their level, its title left out when it is written at theirs", () => {
+  const heads = (/** @type {string} */ md, /** @type {number} */ count) => [...partHeads(lex(md), count)].map((i) => lex(md)[i].text)
+  assert.deepEqual(heads('## Where\n\n## Rent\n\nA\n\n## Buy\n\nB', 2), ['Rent', 'Buy'])
+  assert.deepEqual(heads('# Where\n\n## Rent\n\n## Buy', 2), ['Rent', 'Buy'])
+  assert.deepEqual(heads('## Rent\n\n## Buy', 2), ['Rent', 'Buy'])
+  assert.deepEqual(heads('## Products\n\n### Bread\n\n### Cakes\n\n### Pies\n\n### Tarts', 4), ['Bread', 'Cakes', 'Pies', 'Tarts'])
+  assert.deepEqual(heads('Words alone', 2), [])
+})
+
+test("the deck's contents are its parts, as Slidev's <Toc> reads them, hideInToc heard", () => {
+  const deck = parseDeck('---\nlayout: cover\n---\n\n# Plan\n\n---\nlayout: toc\n---\n\n## Contents\n\n---\nlayout: section\n---\n\n# Why\n\n---\n\n## A slide\n\nWords\n\n---\nlayout: subsection\n---\n\n## The work\n\n---\nlayout: section\nhideInToc: true\n---\n\n# Hidden\n\n---\nlayout: section\ntitle: Named\n---\n\n# How\n\n---\nhideInToc: false\n---\n\n## Shown anyway\n\nWords\n\n---\nlayout: end\n---\n\n# Thanks')
+  const kit = mergeKits().kit
+  assert.equal(layoutNameOf(deck.slides[1], kit), 'summary')
+  assert.deepEqual(contentsOf(deck.slides, kit, 1).map(({ title, level }) => [title, level]), [['Why', 1], ['The work', 2], ['Named', 1], ['Shown anyway', 2]])
+  assert.deepEqual(contentsOf(deck.slides, kit, 1, 1).map(({ title }) => title), ['Why', 'Named'])
+  // A deck without parts: every slide with a title, at its heading's level.
+  const flat = parseDeck('---\nlayout: cover\n---\n\n# Plan\n\n---\nlayout: summary\n---\n\n## Contents\n\n---\n\n## One\n\nWords\n\n---\n\n### Two\n\nWords\n\n---\n\nNo title')
+  assert.deepEqual(contentsOf(flat.slides, kit, 1).map(({ title, level, index }) => [title, level, index]), [['One', 1, 2], ['Two', 2, 3]])
 })

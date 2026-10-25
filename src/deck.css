@@ -81,6 +81,7 @@
 .deck-slide[data-title="huge"] :is(h2, .deck-h2) { font-size: 2.4em; }
 /* What the usual layouts add to their definition: Slidev's looks for them. */
 .deck-layout-section .deck-slot::before { content: ""; display: block; inline-size: 3em; block-size: 0.3em; background: var(--deck-fill); margin-block-end: 0.8em; border-radius: 0.15em; }
+.deck-layout-subsection .deck-slot::before { content: ""; display: block; inline-size: 2em; block-size: 0.2em; background: var(--deck-primary); margin-block-end: 0.7em; border-radius: 0.1em; }
 .deck-layout-statement :is(h1, h2, p, .deck-h1, .deck-h2) { font-size: 2.4em; font-family: var(--deck-heading); font-weight: 700; line-height: 1.2; }
 .deck-slide.deck-layout-fact :is(h1, .deck-h1) { font-size: 5em; color: var(--deck-primary); margin-block-end: 0.15em; }
 .deck-layout-quote blockquote { font-size: 1.7em; border: 0; padding: 0; font-family: var(--deck-heading); }
@@ -110,6 +111,83 @@
 .deck-mindmap [data-branch="6"] { --deck-map-colour: var(--deck-series-6); }
 /* A branch shown a click fades in where it is: moved, its words would be placed from it. */
 .deck-mindmap .deck-step:not(.is-on) { translate: none; }
+/* Figures (figures.js): a slot's lists as cards, key figures, a timeline, chevrons, a programme, a pyramid or a bento;
+   its parts face to face or in a matrix; the deck's contents. In em of the slot's type, so they shrink with it. */
+.deck-figure { flex: 1 1 auto; min-block-size: 0; display: grid; gap: 1em; align-content: center; line-break: strict; }
+.deck-slide .deck-figure :is(p, ul, ol) { margin-block: 0 0.4em; }
+.deck-slide .deck-figure :is(p, ul, ol):last-child { margin-block-end: 0; }
+.deck-words { display: block; }
+.deck-figure .deck-lead { font-family: var(--deck-heading); font-weight: 700; line-height: 1.2; }
+.deck-figure .deck-text { line-height: 1.35; }
+.deck-figure :is(ul, ol).deck-words { font-size: 0.85em; }
+/* On the fill, words are on the fill's ink, their bold and links too. */
+:is(.deck-tile.is-big, .deck-part.is-highlight, .deck-chevron, .deck-level) :is(strong, a, h3, .deck-h3) { color: inherit; }
+:is(.deck-tile.is-big, .deck-part.is-highlight) li::marker { color: inherit; }
+/* A chart or a diagram on the fill would lose its first colour, the fill's: what holds one is on the soft fill, ringed with it. */
+:is(.deck-tile.is-big, .deck-part.is-highlight):has(.deck-block) { background: var(--deck-soft); color: var(--deck-ink); border: 0.15em solid var(--deck-fill); }
+/* Steps: a row of cards, each with its number. */
+.deck-steps { align-items: stretch; }
+.deck-card { display: flex; flex-direction: column; gap: 0.45em; padding: 1.1em 1em; background: var(--deck-soft); border-radius: var(--deck-radius); }
+.deck-badge { display: grid; place-items: center; text-align: center; inline-size: 1.9em; block-size: 1.9em; border-radius: 50%; background: var(--deck-fill); color: var(--deck-on-fill); font-family: var(--deck-heading); font-weight: 700; font-variant-numeric: tabular-nums; }
+.deck-card .deck-lead { font-size: 1.05em; }
+.deck-card .deck-text { font-size: 0.9em; }
+/* Key figures: a row of numbers, each with what it counts, a rule between them. */
+.deck-metrics { gap: 1em 0; text-align: center; }
+.deck-metric { display: flex; flex-direction: column; align-items: center; gap: 0.35em; padding: 0.3em 1em; }
+.deck-metric + .deck-metric { border-inline-start: 1px solid var(--deck-line); }
+.deck-metric .deck-lead { font-size: 3.4em; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--deck-primary); font-variant-numeric: tabular-nums; }
+/* A timeline: its milestones along a line, each its lead over its dot and its words under it. */
+.deck-timeline { grid-template-rows: auto auto auto; gap: 0.6em 0; justify-items: center; text-align: center; }
+.deck-timeline-line { grid-row: 2; grid-column: 1 / -1; justify-self: stretch; align-self: center; block-size: 0.2em; margin-inline: calc(50% / var(--deck-count)); background: var(--deck-line); border-radius: 0.1em; }
+.deck-timeline .deck-lead { align-self: end; padding-inline: 0.4em; font-size: 1.2em; color: var(--deck-primary); }
+.deck-dot { inline-size: 1.15em; block-size: 1.15em; border-radius: 50%; background: var(--deck-fill); border: 0.22em solid var(--deck-paper); }
+.deck-milestone { align-self: start; padding-inline: 0.4em; font-size: 0.9em; }
+/* A process: chevrons, each holding a step's name, its words under it; they point the way the language reads. */
+.deck-process { gap: 0.7em 0; }
+.deck-chevron { --deck-tip: 0.9em; display: flex; align-items: center; justify-content: center; min-block-size: 3.2em; padding: 0.5em calc(var(--deck-tip) + 0.3em) 0.5em calc(var(--deck-tip) * 2); margin-inline-end: calc(0.3em - var(--deck-tip)); background: var(--deck-fill); color: var(--deck-on-fill); text-align: center;
+  clip-path: polygon(0% 0%, calc(100% - var(--deck-tip)) 0%, 100% 50%, calc(100% - var(--deck-tip)) 100%, 0% 100%, var(--deck-tip) 50%); }
+.deck-chevron[data-first] { padding-inline-start: 0.9em; clip-path: polygon(0% 0%, calc(100% - var(--deck-tip)) 0%, 100% 50%, calc(100% - var(--deck-tip)) 100%, 0% 100%); }
+.deck-chevron[data-last] { margin-inline-end: 0; }
+.deck[dir="rtl"] .deck-chevron { clip-path: polygon(100% 0%, var(--deck-tip) 0%, 0% 50%, var(--deck-tip) 100%, 100% 100%, calc(100% - var(--deck-tip)) 50%); }
+.deck[dir="rtl"] .deck-chevron[data-first] { clip-path: polygon(100% 0%, var(--deck-tip) 0%, 0% 50%, var(--deck-tip) 100%, 100% 100%); }
+.deck-under { align-self: start; padding-inline: 0.6em; font-size: 0.9em; text-align: center; }
+/* A programme, and the deck's contents: rows of a time (or a number) and its words, in two columns from seven. */
+.deck-agenda { gap: 0 3em; }
+.deck-agenda-col { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 1.2em; align-content: start; }
+.deck-row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: baseline; padding-block: 0.55em; border-block-end: 1px solid var(--deck-line); }
+.deck-row > :not(.deck-lead) { grid-column: 2; }
+.deck-row .deck-lead { color: var(--deck-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.deck-contents { font-size: 1.1em; }
+.deck-contents .deck-row { cursor: pointer; }
+.deck-contents .deck-row:focus-visible { outline: 0.12em solid var(--deck-primary); outline-offset: 0.1em; }
+.deck-contents .deck-row .deck-text { font-family: var(--deck-heading); font-weight: 600; }
+.deck-contents .deck-row.is-sub { padding-block: 0.3em; border-block-end-style: dotted; font-size: 0.85em; }
+.deck-contents .deck-row.is-sub .deck-text { font-family: var(--deck-body); font-weight: 400; }
+/* A pyramid: its levels stacked, the first the narrowest, on top; what each says beside it. */
+.deck-pyramid { gap: 0.3em 2em; justify-content: center; }
+.deck-level { display: flex; align-items: center; justify-content: center; min-block-size: 2.6em; padding-block: 0.45em; background: var(--deck-fill); color: var(--deck-on-fill); text-align: center; }
+.deck-level .deck-words { font-family: var(--deck-heading); font-weight: 700; }
+.deck-beside { align-self: center; font-size: 0.9em; }
+/* A bento: the first tile big, the others around it. */
+.deck-bento { align-content: stretch; gap: 0.9em; grid-template-columns: 1.4fr repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; }
+.deck-tile { display: flex; flex-direction: column; justify-content: safe flex-end; gap: 0.35em; padding: 1em 1.1em; background: var(--deck-soft); border-radius: var(--deck-radius); }
+.deck-tile.is-big { grid-row: span 2; background: var(--deck-fill); color: var(--deck-on-fill); }
+.deck-tile .deck-lead { font-size: 1.15em; }
+.deck-tile.is-big .deck-lead { font-size: 1.9em; }
+.deck-tile .deck-block { min-block-size: 6cqi; }
+.deck-bento[data-count="1"] { grid-template-columns: 1fr; }
+.deck-bento[data-count="2"] { grid-template-columns: 1.3fr 1fr; }
+.deck-bento[data-count="2"] .deck-tile.is-big { grid-row: auto; }
+.deck-bento[data-count="3"] { grid-template-columns: 1.3fr 1fr; }
+.deck-bento[data-count="4"] .deck-tile:nth-child(2) { grid-column: span 2; }
+/* Parts face to face, a medallion between them, the last on the fill; or four in a matrix, the second, top at the end, on the fill. */
+.deck-versus, .deck-matrix { align-content: stretch; }
+.deck-versus { column-gap: 0; grid-auto-rows: 1fr; }
+.deck-matrix { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 0.8em; }
+.deck-part { display: flex; flex-direction: column; padding: 1.1em 1.4em; background: var(--deck-soft); border-radius: var(--deck-radius); }
+.deck-part.is-highlight { background: var(--deck-fill); color: var(--deck-on-fill); }
+.deck-slide .deck-part :is(h1, h2, h3, h4, .deck-h) { font-size: 1.35em; color: inherit; margin-block-end: 0.45em; }
+.deck-vs { position: relative; z-index: 1; align-self: center; display: grid; place-items: center; text-align: center; inline-size: 3.2em; block-size: 3.2em; margin-inline: -1em; border-radius: 50%; background: var(--deck-ink); color: var(--deck-paper); border: 0.25em solid var(--deck-paper); font-family: var(--deck-heading); font-weight: 800; font-size: 0.9em; letter-spacing: 0.02em; }
 /* Scripts without italics keep their upright letters. */
 .deck :is(blockquote, em):is(:lang(ar), :lang(fa), :lang(ur), :lang(he), :lang(ja), :lang(zh), :lang(ko), :lang(hi), :lang(th)) { font-style: normal; }
 .deck-layout-quote blockquote::before { content: "\201C"; display: block; font-size: 2.4em; line-height: 0.6; color: var(--deck-primary); }
@@ -121,6 +199,11 @@
 :is(.deck-layout-image-left, .deck-layout-image-right).has-image .deck-slot { padding: 6cqi 5cqi; justify-content: center; }
 :is(.deck-layout-image, .deck-layout-cover).has-image .deck-image { position: absolute; inset: 0; }
 :is(.deck-layout-image, .deck-layout-cover).has-image .deck-slot { position: relative; color: #fff; text-shadow: 0 0.05em 0.4em rgb(0 0 0 / 0.6); }
+/* A quote over its picture, the whole slide, behind a veil. */
+.deck-layout-quote.has-image .deck-image { position: absolute; inset: 0; }
+.deck-layout-quote.has-image .deck-image::after { content: ""; position: absolute; inset: 0; background-color: rgb(0 0 0 / 0.55); }
+.deck-layout-quote.has-image .deck-slot { position: relative; color: #fff; text-shadow: 0 0.05em 0.4em rgb(0 0 0 / 0.5); }
+.deck-layout-quote.has-image blockquote::before { color: inherit; }
 .deck-layout-cover.has-image .deck-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.1)); }
 .deck-class-invert { background: var(--deck-ink); color: var(--deck-paper); }
 .deck-class-text-center .deck-slot { text-align: center; align-items: center; }

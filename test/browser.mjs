@@ -30,7 +30,7 @@ const server = createServer(async (req, res) => {
 for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
   if (only && only !== name) continue
   const browser = await engine.launch()
-  for (const deck of ['en', 'ar', 'ja', 'tricky', 'en.embedded']) {
+  for (const deck of ['en', 'ar', 'ja', 'tricky', 'layouts', 'en.embedded']) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, acceptDownloads: true })
     const errors = []
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
@@ -65,6 +65,43 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     }))
     for (const map of maps) if (!map.inside || !map.apart || map.lines !== map.nodes - 1) fail(`${name} ${deck} mind map: ${JSON.stringify(map)}`)
     if (maps.length) log(`${name} ${deck} mind maps: ${JSON.stringify(maps)}`)
+    // Figures: each of their words inside the figure and on the slide, the deck's contents' parts each going to its slide.
+    const figures = await page.evaluate(() => [...document.querySelectorAll('.deck-stage .deck-figure')].map((figure) => {
+      const box = figure.getBoundingClientRect(), slide = figure.closest('.deck-slide').getBoundingClientRect()
+      const words = [...figure.querySelectorAll('.deck-words')].map((one) => one.getBoundingClientRect())
+      const within = (/** @type {DOMRect} */ r, /** @type {DOMRect} */ b) => r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1
+      return { kind: figure.className.replace('deck-figure ', ''), words: words.length, inside: words.every((r) => within(r, box) && within(r, slide)) }
+    }))
+    for (const figure of figures) if (!figure.inside || !figure.words) fail(`${name} ${deck} figure: ${JSON.stringify(figure)}`)
+    if (figures.length) log(`${name} ${deck} figures: ${figures.map((f) => `${f.kind} (${f.words})`).join(', ')}`)
+    if (deck === 'layouts') {
+      const went = await page.evaluate(async () => {
+        const out = []
+        for (const part of [...window.deckView.slides()[1].querySelectorAll('[data-go]')]) {
+          window.deckView.go(1, 0)
+          await new Promise((r) => setTimeout(r, 50))
+          part.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+          await new Promise((r) => setTimeout(r, 50))
+          out.push(`${part.textContent.trim()}→${window.deckView.at === Number(part.getAttribute('data-go')) ? 'ok' : window.deckView.at}`)
+        }
+        return out
+      })
+      if (went.length !== 4 || went.some((one) => !one.endsWith('ok'))) fail(`${name} contents: ${went}`)
+      log(`${name} contents: ${went.join(', ')}`)
+      // A milestone's lead and a part's heading changed in place, each back in its own words in the Markdown.
+      for (const [at, selector, typed, line] of [[10, '.deck-timeline .deck-lead', 'Q0', '- **Q0** The shop signed for and fitted'], [10, '.deck-milestone .deck-text', 'Fitted', '- **Q0** Fitted'], [6, '.deck-part h2', 'Lease a shop', '## Lease a shop']]) {
+        await page.evaluate((at) => window.deckView.go(at, 99), at)
+        await page.waitForTimeout(200)
+        await page.locator(`.deck-slide.is-shown ${selector}`).first().dblclick()
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A')
+        await page.keyboard.type(typed)
+        await page.keyboard.press('Enter')
+        await page.waitForTimeout(200)
+        const found = await page.evaluate((line) => window.deckView.source.split('\n').includes(line), line)
+        if (!found) fail(`${name} figure in place: no line ${line}`)
+      }
+      log(`${name} figures changed in place`)
+    }
     if (errors.length || overflow.length) fail(`${name} ${deck}: ${errors.join(' | ')} overflow [${overflow}]`)
     log(`${name} ${deck}: ${count} slides, first slide in ${firstSlide} ms, ${charts} charts + ${diagrams} diagrams drawn in ${drawnIn} ms, overflowing: [${overflow}], errors: ${errors.length ? errors.join(' | ') : 'none'}`)
 
@@ -138,7 +175,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     }
 
     // Saved as PowerPoint, in each scheme for the English deck.
-    if (deck !== 'tricky' && deck !== 'en.embedded') for (const scheme of deck === 'en' ? ['light', 'dark'] : ['shown']) {
+    if (deck !== 'tricky' && deck !== 'en.embedded' && deck !== 'layouts') for (const scheme of deck === 'en' ? ['light', 'dark'] : ['shown']) {
       if (scheme !== 'shown') { await page.evaluate((s) => window.deckView.setScheme(s), scheme); await page.waitForTimeout(500) }
       // A diagram takes the scheme's colours: its ink is the slide's.
       const inked = await page.evaluate(() => [...document.querySelectorAll('.deck-stage .deck-diagram img')].every((img) => {
@@ -166,7 +203,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
 
   // Over http, where a page reads its own pictures back as a file from disk can't: each slide that shows a picture (one alone
   // on its line, one beside the words, a diagram) holds it in PowerPoint, at its size.
-  for (const deck of ['en', 'ja']) {
+  for (const deck of ['en', 'ja', 'ar', 'layouts']) {
   const served = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 })
   await served.goto(`http://localhost:4591/examples/${deck}.deck.html`)
   await served.waitForFunction(() => [...document.querySelectorAll('.deck-block')].every((b) => b.querySelector('.deck-chart svg, .deck-diagram img')), null, { timeout: 30000 }).catch(() => {})
@@ -185,13 +222,23 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
         const figures = (xml.match(/<c:chart |<p:pic>/g) ?? []).length, inNodes = map.querySelectorAll('.deck-map-node .deck-block').length
         if (curves !== map.querySelectorAll('.deck-map-lines path').length || words.length || figures < inNodes) maps.push(`slide ${i + 1}: ${curves} curves, ${figures} of ${inNodes} charts and diagrams, missing ${words.map((w) => w.textContent)}`)
       }
+      // A figure as PowerPoint's shapes: a shape for each of its shapes, a box for each of its words.
+      for (const figure of slide.querySelectorAll('.deck-figure')) {
+        const xml = await zip.file(`ppt/slides/slide${i + 1}.xml`).async('string')
+        const said = [...xml.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1].replace(/&(apos|quot|lt|gt|amp);/g, (_, e) => ({ apos: "'", quot: '"', lt: '<', gt: '>', amp: '&' })[e])).join(' ').replace(/\s+/g, ' ')
+        // A list's words item by item, as they are paragraphs there.
+        const texts = (/** @type {Element} */ one) => (one.matches('ul, ol') ? [...one.querySelectorAll('li')].map((li) => { const own = li.cloneNode(true); own.querySelectorAll('ul, ol').forEach((sub) => sub.remove()); return own.textContent }) : [one.textContent])
+        const missing = [...figure.querySelectorAll('.deck-words')].filter((one) => !one.parentElement.closest('.deck-words')).flatMap(texts).filter((text) => !said.includes(text.replace(/\s+/g, ' ').trim()))
+        const shapes = (xml.match(/<p:sp>/g) ?? []).length
+        if (missing.length || shapes < figure.querySelectorAll('.deck-shape').length) maps.push(`slide ${i + 1} ${figure.className}: ${shapes} shapes for ${figure.querySelectorAll('.deck-shape').length}, missing ${missing}`)
+      }
       if (!slide.querySelector('.deck-picture img, .deck-image, .deck-diagram img')) continue
       const pictures = (await zip.file(`ppt/slides/slide${i + 1}.xml`).async('string')).match(/<p:pic>[\s\S]*?<\/p:pic>/g) ?? []
       if (!pictures.length || pictures.some((one) => /<a:ext cx="0"|<a:ext cx="\d+" cy="0"/.test(one))) out.push(i + 1)
     }
     return { pictureless: out, mapless: maps }
   })
-  if (mapless.length) fail(`${name} ${deck} pptx mind map: ${mapless.join(' | ')}`)
+  if (mapless.length) fail(`${name} ${deck} pptx mind map or figure: ${mapless.join(' | ')}`)
   if (pictureless.length) fail(`${name} ${deck} pptx over http: no picture, or one without a size, on slides ${pictureless}`)
   log(`${name} ${deck} pptx over http: ${pictureless.length ? `no picture on slides ${pictureless}` : 'a picture on each slide that shows one'}`)
   await served.close()

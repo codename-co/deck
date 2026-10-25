@@ -4,15 +4,18 @@
 // source (data-edit, offsets), so an edit made on the slide goes back into the Markdown. HTML a
 // deck holds is not drawn: Slidev's <v-click> and <v-clicks> become steps, <br> a line break, and
 // any other tag gives up its words alone. ```echarts and ```mermaid go to the host's drawers. A
-// layout that draws its lists as a mind map has a slot's lists merged into one map (mindmap.js).
-import { STANDARD, CORNERS, inferLayout, ALIASES } from './kit.js'
+// layout that draws its lists as a mind map has a slot's lists merged into one map (mindmap.js);
+// one that draws them as a figure (cards, numbers, a timeline…), or sets its parts face to face or
+// in a matrix, or shows the deck's contents, has them drawn so (figures.js).
+import { STANDARD, CORNERS, layoutNameOf } from './kit.js'
 import { itemsOf, mergeItems, keyOf, watchMap } from './mindmap.js'
+import { entriesOf, boldLines, listFigure, partHeads, partsFigure, contentsFigure } from './figures.js'
 import { parseYaml } from './yaml.js'
 
 /** @typedef {import('./parse.js').Slide} Slide */
 /** @typedef {import('./parse.js').Slot} Slot */
 /** @typedef {(element: HTMLElement, source: string, options?: Record<string, any>) => void | Promise<void>} Drawer */
-/** @typedef {{ blocks: Record<string, Drawer>, resolve: (src: string) => string | null, headings: 'real' | 'aria', number: (n: number) => string, total: number, kit: import('./kit.js').Kit, lex: (markdown: string) => any[], slide: string }} Context */
+/** @typedef {{ blocks: Record<string, Drawer>, resolve: (src: string) => string | null, headings: 'real' | 'aria', number: (n: number) => string, total: number, kit: import('./kit.js').Kit, lex: (markdown: string) => any[], slide: string, deck?: import('./parse.js').Deck }} Context */
 
 /**
  * @param {string} tag @param {Record<string, string | number | boolean | undefined>} [attributes]
@@ -39,8 +42,7 @@ export function safeUrl(href) {
  */
 export function renderSlide(slide, context) {
   // The layout the slide names, by its name or a name brains give it, else the one its content suits.
-  const asked = String(slide.settings.layout ?? '').trim().toLowerCase()
-  const layout = context.kit.layouts[asked] ? asked : context.kit.layouts[ALIASES[asked]] ? ALIASES[asked] : inferLayout(slide)
+  const layout = layoutNameOf(slide, context.kit)
   const definition = context.kit.layouts[layout] ?? STANDARD.layouts.default
   const classes = String(slide.settings.class ?? '').split(/\s+/).filter((name) => ['invert', 'text-center', 'text-left'].includes(name))
   const counter = { step: 0 }
@@ -61,7 +63,7 @@ export function renderSlide(slide, context) {
   canvas.style.setProperty('grid-template-rows', definition.rows.join(' '))
   section.append(canvas)
   const image = slide.settings.image ?? slide.settings.background
-  if (typeof image === 'string' && ['image-left', 'image-right', 'image', 'cover'].includes(layout)) {
+  if (typeof image === 'string' && ['image-left', 'image-right', 'image', 'cover', 'quote'].includes(layout)) {
     const url = context.resolve(image)
     if (url) {
       const picture = h('div', { class: 'deck-image', role: 'img', 'aria-label': String(slide.settings.alt ?? '') || undefined })
@@ -72,10 +74,13 @@ export function renderSlide(slide, context) {
   }
   for (const name of names) {
     const slot = slots.get(name)
-    const element = h('div', { class: 'deck-slot', 'data-slot': name }, slot ? blocks(slot, context, counter, definition.lists === 'mindmap') : [])
+    const element = h('div', { class: 'deck-slot', 'data-slot': name }, slot ? blocks(slot, context, counter, definition.lists, definition.parts) : [])
     element.style.setProperty('grid-area', `s-${name}`)
     canvas.append(element)
   }
+  // The deck's contents, under the words of the slot they open.
+  const contents = definition.contents && contentsFigure(context, slide.index, Number(slide.settings.maxDepth) || undefined)
+  if (contents) canvas.querySelector(`.deck-slot[data-slot="${names[0]}"]`)?.append(contents)
   // Slots a layout doesn't have still show, under the rest, rather than being lost.
   for (const slot of slide.slots) if (!names.includes(slot.name)) canvas.append(h('div', { class: 'deck-slot', 'data-slot': slot.name }, blocks(slot, context, counter)))
   if (definition.numbered && slide.settings.paginate !== false) section.append(h('span', { class: 'deck-number', 'aria-hidden': 'true' }, [context.number(slide.index + 1)]))
@@ -90,11 +95,24 @@ export function renderSlide(slide, context) {
   return { element: section, steps: counter.step }
 }
 
-/** @param {Slot} slot @param {Context} context @param {{ step: number }} counter @param {boolean} [mapped] its lists as a mind map @returns {Node[]} */
-function blocks(slot, context, counter, mapped = false) {
+/**
+ * @param {Slot} slot @param {Context} context @param {{ step: number }} counter
+ * @param {import('./kit.js').List} [kind] how its lists are drawn @param {'none' | 'versus' | 'matrix'} [parted] how its parts are set @returns {Node[]}
+ */
+function blocks(slot, context, counter, kind = 'bullets', parted = 'none') {
   const tokens = context.lex(slot.text)
   /** @type {Node[]} */
   const out = []
+  // Its parts, each from its heading, and where they go; the blocks of the part being drawn go to it.
+  const heads = parted === 'none' ? new Set() : partHeads(tokens, parted === 'versus' ? 2 : 4)
+  /** @type {Node[][]} */
+  const parts = []
+  let sink = out, partsAt = -1
+  const mapped = kind === 'mindmap' && !heads.size, figured = kind !== 'bullets' && kind !== 'mindmap' && !heads.size
+  // A figure's entries, and where it goes.
+  /** @type {import('./figures.js').Entry[]} */
+  const entries = []
+  let figureAt = -1
   // A mind map's lists, each with its heading when one comes just before it, and where the map goes.
   /** @type {{ items: import('./mindmap.js').Item[], step: boolean }[]} */
   const lists = []
@@ -103,6 +121,15 @@ function blocks(slot, context, counter, mapped = false) {
   for (const [i, token] of tokens.entries()) {
     const start = at
     at += token.raw.length
+    if (heads.has(i)) { if (partsAt < 0) partsAt = out.length; parts.push(sink = []) }
+    if (figured && (token.type === 'list' || boldLines(token))) {
+      if (figureAt < 0) figureAt = out.length
+      // A click an entry in <v-clicks>, one for them all in <v-click>, numbered where they are.
+      const found = entriesOf(token, start, context.lex), once = mode === 'click' ? ++counter.step : 0
+      for (const entry of found) entry.step = once || (mode === 'clicks' ? ++counter.step : 0)
+      entries.push(...found)
+      continue
+    }
     if (mapped && (token.type === 'list' || (token.type === 'heading' && out.length && tokens.slice(i + 1).find((/** @type {any} */ t) => t.type !== 'space')?.type === 'list'))) {
       if (mapAt < 0) mapAt = out.length
       if (token.type === 'heading') { label = /** @type {HTMLElement} */ (block(token, start, context, null)); continue }
@@ -123,7 +150,7 @@ function blocks(slot, context, counter, mapped = false) {
     }
     if (token.type === 'html') {
       const tag = /^\s*<(\/?)(v-clicks?|br)\b[^>]*>\s*$/i.exec(token.raw)
-      if (tag && tag[2] === 'br') out.push(h('br'))
+      if (tag && tag[2] === 'br') sink.push(h('br'))
       else if (tag) mode = tag[1] ? '' : /** @type {'click' | 'clicks'} */ (tag[2].toLowerCase() === 'v-clicks' ? 'clicks' : 'click')
       else if (/<li\b/i.test(token.raw)) {
         // A list written as HTML, as brains write Slidev's steps (<li v-click>): its items' words, each
@@ -136,19 +163,21 @@ function blocks(slot, context, counter, mapped = false) {
           if (/\bv-click\b/.test(attrs) || mode === 'clicks') step(li, ++counter.step)
           list.append(li)
         }
-        if (list.childElementCount) out.push(list)
+        if (list.childElementCount) sink.push(list)
       } else {
         const words = token.raw.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-        if (words) out.push(h('p', {}, [words]))
+        if (words) sink.push(h('p', {}, [words]))
       }
       continue
     }
     const element = block(token, start, context, mode === 'clicks' ? counter : null)
     if (!element) continue
     if (mode === 'click' || (mode === 'clicks' && token.type !== 'list')) step(element, ++counter.step)
-    out.push(element)
+    sink.push(element)
   }
   if (lists.length) mindmap(out, lists.flatMap((list) => list.items), context, counter, mapAt)
+  if (entries.length) out.splice(figureAt, 0, listFigure(kind, entries, context))
+  if (parts.length) out.splice(partsAt, 0, partsFigure(parted, parts))
   return out
 }
 
@@ -199,14 +228,14 @@ function mindmap(out, items, context, counter, at) {
 }
 
 /** @param {Element} element @param {number} n */
-const step = (element, n) => { element.classList.add('deck-step'); element.setAttribute('data-step', String(n)) }
+export const step = (element, n) => { element.classList.add('deck-step'); element.setAttribute('data-step', String(n)) }
 
 /**
  * @param {any} token @param {number} start where its raw starts in the source
  * @param {Context} context @param {{ step: number } | null} stepped list items each a step
  * @returns {HTMLElement | null}
  */
-function block(token, start, context, stepped) {
+export function block(token, start, context, stepped) {
   switch (token.type) {
     case 'heading': {
       const head = /^\s*#{1,6}[ \t]+/.exec(token.raw)
@@ -299,7 +328,7 @@ function lines(text) {
 }
 
 /** @param {number} from @param {number} to */
-const range = (from, to) => (to > from ? `${from}-${to}` : undefined)
+export const range = (from, to) => (to > from ? `${from}-${to}` : undefined)
 
 /** @param {any[]} tokens @param {Context} context @returns {Node[]} */
 export function inline(tokens = [], context) {

@@ -55,7 +55,9 @@ A logo shows in its corner, small, or big where a layout says (`logo`: a cover, 
 | `paper` | `paper`, `fill` (the primary), `ink`, `soft` | `paper` |
 | `title` | `normal`, `large`, `huge` | `normal` |
 | `logo` | `small`, `big`, `none`: how the kit's logo shows | `small`; `big` on `cover`, `intro`, `end`; `none` on `image`, `full`, `none` |
-| `lists` | `bullets`, `mindmap`: each slot's lists as lists, or merged into one mind map ([format.md](format.md#a-mind-map)) | `bullets`; `mindmap` on `mindmap` |
+| `lists` | `bullets`, `mindmap`, `steps`, `metrics`, `timeline`, `process`, `agenda`, `pyramid`, `bento`: each slot's lists as lists, merged into one mind map ([format.md](format.md#a-mind-map)), or drawn as that figure ([format.md](format.md#figures)) | `bullets`; the layout's name on deck's own |
+| `parts` | `none`, `versus`, `matrix`: each slot's `##` parts as they come, face to face, or in a grid of two by two; over `lists` | `none`; `versus` and `matrix` on deck's own |
+| `contents` | `true` for the deck's contents under the slot's words ([format.md](format.md#the-decks-contents)) | `false`; `true` on `summary` |
 | `pptx` | Title Slide, Title and Content, Section Header, Two Content, Comparison, Title Only, Blank, Content with Caption, Picture with Caption | by its slots |
 | `numbered` | `false` for no slide number | `true` |
 | `art` | Up to 8 names of the kit's `pictures`, drawn over the whole slide, layer over layer, behind the words, as a template draws them | none |
@@ -85,14 +87,18 @@ Each layout's art is what a slide on it shows besides its placeholders, as SVG l
 |---|---|---|
 | `cover`, `intro`, `end` | one | Title Slide |
 | `default` | one | Title and Content |
-| `section` | one | Section Header |
+| `section`, `subsection` | one | Section Header |
+| `summary` | one, the deck's contents under it | Title and Content |
 | `two-cols` | `default`, `right` | Two Content |
 | `two-cols-header` | `default` across, `left`, `right`, `bottom` | Comparison |
 | `three-cols` | `default` across, `left`, `middle`, `right` | Comparison |
-| `center`, `statement`, `fact`, `quote` | one | Title Only |
+| `center`, `statement`, `fact` | one | Title Only |
+| `quote` | one, over the slide's `image` when it has one | Title Only |
 | `image-left`, `image-right` | one, beside the slide's `image` | Picture with Caption |
 | `image`, `full`, `none` | one | Blank |
 | `mindmap` | one, its lists as one mind map | Title Only |
+| `steps`, `metrics`, `timeline`, `process`, `agenda`, `pyramid`, `bento` | one, its lists as that figure | Title Only |
+| `versus`, `matrix` | one, its parts face to face or in a matrix | Title Only |
 
 ## A slide that names none
 

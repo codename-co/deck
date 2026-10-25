@@ -124,6 +124,7 @@ export function createDeck(root, options) {
 
   function draw() {
     context.total = deck.slides.length
+    context.deck = deck
     drawn = deck.slides.map((slide) => renderSlide(slide, context))
     for (const [i, { element }] of drawn.entries()) {
       element.setAttribute('aria-label', words.where.replace('{n}', number(i + 1)).replace('{count}', number(drawn.length)))
@@ -297,6 +298,8 @@ export function createDeck(root, options) {
     target.addEventListener('blur', blur)
   })
 
+  // The deck's contents: a part chosen, its slide shown.
+  const chosen = (/** @type {Event} */ event) => /** @type {HTMLElement | null} */ (/** @type {Element} */ (event.target).closest('.deck-slide.is-shown [data-go]'))
   // The keys a clicker sends, and the deck's own.
   root.addEventListener('keydown', (event) => {
     const target = /** @type {HTMLElement} */ (event.target)
@@ -304,6 +307,8 @@ export function createDeck(root, options) {
       if ((event.metaKey || event.ctrlKey) && event.key === 's') { event.preventDefault(); options.onSave?.(source) }
       return
     }
+    const part = chosen(event)
+    if (part && event.key === 'Enter') { event.preventDefault(); go(Number(part.dataset.go)); return }
     const forward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight', backward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft'
     if (event.altKey || event.ctrlKey || event.metaKey) {
       if ((event.metaKey || event.ctrlKey) && event.key === 's') { event.preventDefault(); options.onSave?.(source) }
@@ -318,6 +323,10 @@ export function createDeck(root, options) {
     event.preventDefault()
     act()
   })
+  stage.addEventListener('click', (event) => {
+    const part = chosen(event)
+    if (part && !root.classList.contains('is-editing') && !root.classList.contains('is-overview')) { event.stopPropagation(); go(Number(part.dataset.go)) }
+  }, true)
   stage.addEventListener('click', (event) => {
     if (document.fullscreenElement && !(/** @type {Element} */ (event.target).closest('a, button, input'))) move(1)
   })

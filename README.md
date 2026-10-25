@@ -39,12 +39,12 @@ layout: two-cols
 
 ## What it does
 
-- **Layouts and looks as kits.** Eighteen layouts come with deck, Slidev's names, PowerPoint's usual ones and a mind map drawn from a slide's lists. A kit adds others, turns some off, and holds a design system (DTCG tokens or a few flat ones, colours as hex or `rgb()`), a logo and the art a layout draws behind its words, as data, never CSS. A slide that names no layout gets the one its content suits. A company's PowerPoint template (or an Office theme) reads into a kit, its layouts with their pictures, shapes and words as their art, and a kit's tokens write out as DTCG. See [docs/kits.md](docs/kits.md).
+- **Layouts and looks as kits.** Twenty-nine layouts come with deck: Slidev's names, PowerPoint's usual ones, a mind map, and figures drawn from a slide's lists (numbered cards, key figures, a timeline, chevrons, a timed programme, a pyramid, a bento), its `##` parts (face to face, a matrix) or the deck itself (its contents, with `hideInToc`). A kit adds others, turns some off, and holds a design system (DTCG tokens or a few flat ones, colours as hex or `rgb()`), a logo and the art a layout draws behind its words, as data, never CSS. A slide that names no layout gets the one its content suits. A company's PowerPoint template (or an Office theme) reads into a kit, its layouts with their pictures, shapes and words as their art, and a kit's tokens write out as DTCG. See [docs/kits.md](docs/kits.md).
 - **Light and dark** from the same tokens, every colour held at WCAG AA on its paper.
 - **Presenting:** full screen, a clicker's keys, steps (`<v-clicks>`), Slidev's transitions and a Morph that needs nothing written, the presenter's view with notes and a timer, all slides at once.
 - **Charts and diagrams:** ` ```echarts ` blocks drawn by ECharts, ` ```mermaid ` blocks drawn by [Pele](https://github.com/obsidianmd/pele) (every kind Mermaid has, from 17 KB a kind), each loaded the first time a slide needs it. `layout: mindmap` draws a slide's indented lists as one mind map, merged under one root, its words changed in place and PowerPoint's own shapes on the way out.
 - **Changed three ways on one source:** as Markdown beside the slides, in place on a slide (a double click), or by a host's own means; each change goes back into the Markdown.
-- **PowerPoint out, from the browser:** a layout per deck layout with placeholders, lists as lists, tables, native charts with their numbers, mind maps as shapes, notes, transitions, the kit's colours as the theme. PowerPoint opens it without a repair. Keynote is not a target.
+- **PowerPoint out, from the browser:** a layout per deck layout with placeholders, lists as lists, tables, native charts with their numbers, mind maps and figures as shapes, notes, transitions, the kit's colours as the theme. PowerPoint opens it without a repair. Keynote is not a target.
 - **Every language:** right to left (layouts, charts and tables mirrored), CJK, upright scripts kept upright.
 - **Read liberally:** what brains write in other dialects' habits (Pandoc's fenced divs, remark's and reveal.js's notes, headings as slides) is read without being rewritten. See [docs/format.md](docs/format.md).
 - **Safe in a strict page:** the renderer builds with the DOM's own calls, sets no style attribute and needs no Trusted Types policy.
@@ -84,7 +84,7 @@ Commits carry no Co-Authored-By or Claude-Session trailer: `.claude/settings.jso
 |---|---|
 | `src/` | The renderer, its reader, kits, looks, the file, PowerPoint, repairs, pictures; JavaScript with JSDoc, checked by `tsc` |
 | `test/` | Unit tests (`node --test`), browser tests, a strict host page, Mermaid samples |
-| `examples/` | Decks in English, Arabic, Japanese, one with its own kit, one full of escapes; `make.mjs` writes their `.deck.html` |
+| `examples/` | Decks in English, Arabic, Japanese, one of every figure, one with its own kit, one full of escapes; `make.mjs` writes their `.deck.html` |
 | `eval/` | The brain evaluations: a draft skill, requests in four languages, replies, scores |
 | `docs/` | The format, kits, the host API, and what phase 0 measured |
 
