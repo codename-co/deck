@@ -59,6 +59,8 @@ Open a `.deck.html` file in a browser. Write one with `writeDeckFile(markdown, o
 | `@codename/deck/bundle` | The same with `marked` inside |
 | `@codename/deck/file` (`dist/deck.js`) | The classic script a `.deck.html` links to or holds |
 | `@codename/deck/css` | The stylesheet, for a host that loads its own |
+| `@codename/deck/pptx` | A deck as PowerPoint (`toPptx`), which a host loads when it saves one |
+| `@codename/deck/blocks` | The drawers a file uses alone (`defaultBlocks`, `libraryAt`), for a host that has none of its own |
 
 A file links to its renderer by default, at this package's version on jsDelivr. A host can name another address, or hold the renderer whole (about 113 KB) for a file meant to work offline. On its way out of a host, a deck holds its pictures inside it as `data:` addresses (`inlinePictures`).
 
@@ -66,7 +68,7 @@ A file links to its renderer by default, at this package's version on jsDelivr. 
 
 ```bash
 npm install
-npm run build          # dist/: deck.js, deck.mjs, deck.bundle.mjs, deck.css
+npm run build          # dist/: deck.js, deck.mjs, deck.bundle.mjs, deck.css, template.mjs, pptx.mjs, blocks.mjs
 npm test               # node --test: reading, files, kits, looks, pictures, Pele
 npm run typecheck      # tsc --noEmit, strict, over src/
 npm run test:browsers  # the examples in Chromium and WebKit from disk, offline; PowerPoint export; a strict host

@@ -1,6 +1,6 @@
 # Drawing decks in a host
 
-A host is a page that draws decks itself. deck builds every element with the DOM's own calls, sets custom properties through the CSSOM rather than style attributes, and needs no Trusted Types policy, so it runs under a policy with `style-src 'self'` and `trusted-types 'none'`. Load `@codename/deck` (with your own `marked` through an import map) or `@codename/deck/bundle`, and `@codename/deck/css` as a stylesheet.
+A host is a page that draws decks itself. deck builds every element with the DOM's own calls, sets custom properties through the CSSOM rather than style attributes, and needs no Trusted Types policy, so it runs under a policy with `style-src 'self'` and `trusted-types 'none'`. Load `@codename/deck` (with your own `marked` through an import map) or `@codename/deck/bundle`, and `@codename/deck/css` as a stylesheet. PowerPoint (`@codename/deck/pptx`) and deck's own drawers (`@codename/deck/blocks`) are entries of their own, so a host that draws decks loads neither before it needs it.
 
 ## createDeck(element, options)
 
@@ -32,11 +32,12 @@ Every block that can be changed by hand carries `data-edit="from-to"`, the offse
 
 ## Drawers
 
-`defaultBlocks({ base, root, versions })` gives the drawers a file uses alone: ECharts as SVG in the deck's colours and type, its category axis mirrored right to left; Pele for Mermaid's language, its SVG shown as a picture coloured by Pele's variables (its charts' series too), again when the scheme changes, its words the picture's text, the fence's options its settings and `scale`. Each library loads the first time a slide needs it, from `base` (jsDelivr's npm mirror, or a `node_modules/` folder, `libraryAt()`). A host with a strict policy gives its own: Pele's SVG holds style attributes, so it belongs in an image or a worker's output, not in the page's DOM.
+`defaultBlocks({ base, root, versions })`, from `@codename/deck/blocks`, gives the drawers a file uses alone: ECharts as SVG in the deck's colours and type, its category axis mirrored right to left; Pele for Mermaid's language, its SVG shown as a picture coloured by Pele's variables (its charts' series too), again when the scheme changes, its words the picture's text, the fence's options its settings and `scale`. Each library loads the first time a slide needs it, from `base` (jsDelivr's npm mirror, or a `node_modules/` folder, `libraryAt()`). A host with a strict policy gives its own: Pele's SVG holds style attributes, so it belongs in an image or a worker's output, not in the page's DOM.
 
 ## PowerPoint
 
 ```js
+const { toPptx } = await import('@codename/deck/pptx')
 const { blob, report } = await toPptx(view, { PptxGenJS, JSZip })
 ```
 

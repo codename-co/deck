@@ -19,6 +19,14 @@
       "types": "./dist/types/template.d.ts",
       "default": "./dist/template.mjs"
     },
+    "./pptx": {
+      "types": "./dist/types/pptx.d.ts",
+      "default": "./dist/pptx.mjs"
+    },
+    "./blocks": {
+      "types": "./dist/types/blocks.d.ts",
+      "default": "./dist/blocks.mjs"
+    },
     "./src/*": "./src/*"
   },
   "files": [

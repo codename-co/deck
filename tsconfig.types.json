@@ -9,7 +9,9 @@
   },
   "include": [
     "src/index.js",
-    "src/template.js"
+    "src/template.js",
+    "src/pptx.js",
+    "src/blocks.js"
   ],
   "$comment": "deck's types as hosts read them, from its JSDoc (npm run build)."
 }
