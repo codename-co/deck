@@ -1,0 +1,11 @@
+classDiagram
+  class Ticket {
+    +String subject
+    +Date opened
+    +close()
+  }
+  class Agent {
+    +String name
+    +assign(Ticket t)
+  }
+  Agent "1" --> "*" Ticket : handles

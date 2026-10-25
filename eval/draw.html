@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="/dist/deck.css">
+<main id="root" style="width: 980px"></main>
+<script type="module">
+import { createDeck, defaultBlocks } from '/dist/deck.bundle.mjs'
+window.draw = async (source) => {
+  const root = document.getElementById('root')
+  const view = createDeck(root, { source, blocks: defaultBlocks({ base: '/node_modules/', root }) })
+  const wanted = { charts: root.querySelectorAll('.deck-stage .deck-echarts').length, diagrams: root.querySelectorAll('.deck-stage .deck-mermaid').length }
+  for (let i = 0; i < 100; i++) {
+    if (root.querySelectorAll('.deck-stage .deck-chart svg').length + root.querySelectorAll('.deck-stage .is-failed').length >= wanted.charts + wanted.diagrams && root.querySelectorAll('.deck-stage .deck-diagram img').length + root.querySelectorAll('.deck-stage .deck-mermaid.is-failed').length >= wanted.diagrams) break
+    await new Promise((r) => setTimeout(r, 100))
+  }
+  await document.fonts.ready
+  view.fitAll()
+  return {
+    overflow: [...root.querySelectorAll('.deck-stage .deck-slide[data-overflow]')].map((s) => Number(s.dataset.index) + 1),
+    charts: `${root.querySelectorAll('.deck-stage .deck-chart svg').length}/${wanted.charts}`, diagrams: `${root.querySelectorAll('.deck-stage .deck-diagram img').length}/${wanted.diagrams}`,
+  }
+}
+</script>

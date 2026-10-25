@@ -1,0 +1,42 @@
+{
+  "name": "@codename/deck",
+  "version": "0.1.0",
+  "description": "Slide decks as one web page: Markdown in Slidev's form inside a .deck.html file any browser presents, a renderer that runs anywhere, kits of layouts and looks, and an editable PowerPoint out",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./dist/deck.mjs",
+    "./bundle": "./dist/deck.bundle.mjs",
+    "./file": "./dist/deck.js",
+    "./css": "./dist/deck.css",
+    "./src/*": "./src/*"
+  },
+  "files": ["dist", "src", "docs", "LICENSE", "README.md"],
+  "keywords": ["slides", "presentation", "markdown", "slidev", "powerpoint", "pptx"],
+  "scripts": {
+    "build": "node build.mjs",
+    "examples": "node build.mjs && node examples/make.mjs",
+    "test": "node --test test/*.test.js",
+    "test:browsers": "npm run examples && node test/browser.mjs && node test/kit-browser.mjs",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test && npm run test:browsers",
+    "eval": "node eval/run.mjs",
+    "eval:check": "node eval/check.mjs && node eval/dialects/check.mjs && node eval/dialects/draw.mjs",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "peerDependencies": {
+    "marked": "^18.0.14"
+  },
+  "devDependencies": {
+    "echarts": "6.1.0",
+    "esbuild": "0.28.2",
+    "marked": "^18.0.14",
+    "pele": "1.10.0",
+    "playwright": "1.63.0",
+    "pptxgenjs": "4.0.1",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

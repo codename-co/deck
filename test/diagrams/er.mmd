@@ -1,0 +1,8 @@
+erDiagram
+  CUSTOMER ||--o{ TICKET : opens
+  AGENT ||--o{ TICKET : handles
+  TICKET {
+    string id
+    date opened
+    string status
+  }

@@ -1,0 +1,16 @@
+flowchart TD
+  A([Customer calls]) --> B{Known issue?}
+  B -->|Yes| C[Send help article]
+  B -->|No| D[Open a ticket]
+  D --> E[(Ticket queue)]
+  E --> F{{Triage within 4h}}
+  F --> G[Assign to an agent]
+  G --> H>Reply sent]
+  C --> I([Done])
+  H --> I
+  subgraph Team
+    G
+    H
+  end
+  classDef warm fill:#fde68a,stroke:#b45309
+  class F warm

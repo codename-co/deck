@@ -1,0 +1,164 @@
+/* deck: a slide is a 16:9 box, a size container, whose canvas sizes its type and space with the
+   slide's width (cqi), so it wraps the same at any size; its colours and faces are the look's tokens as custom properties; logical properties
+   only, so a deck in Arabic mirrors. The others are laid out behind the one shown, unseen. */
+.deck { --deck-paper: #fffdf8; --deck-ink: #1d1b16; --deck-muted: #6b675e; --deck-line: #e4e0d6; --deck-primary: #8a6100; --deck-fill: #f7c531; --deck-on-fill: #1d1b16; --deck-soft: #fdf1c9;
+  --deck-heading: system-ui, sans-serif; --deck-body: system-ui, sans-serif; --deck-radius: 10px;
+  position: relative; display: grid; gap: 0.5rem; color: var(--deck-ink); font-family: var(--deck-body); }
+.deck *, .deck *::before, .deck *::after { box-sizing: border-box; }
+.deck-stage { position: relative; view-transition-name: deck-stage; }
+.deck-slide {
+  container-type: inline-size; position: relative; aspect-ratio: 16 / 9; overflow: hidden; inline-size: 100%;
+  background: var(--deck-paper); color: var(--deck-ink); border-radius: var(--deck-radius); box-shadow: 0 0 0 1px var(--deck-line);
+}
+.deck-canvas { position: absolute; inset: 0; display: grid; padding: 6cqi 7cqi 7cqi; gap: 0 4cqi; font-size: 2.6cqi; line-height: 1.4; }
+.deck-slide:not(.is-shown) { position: absolute; inset-block-start: 0; inset-inline-start: 0; visibility: hidden; }
+.deck-slot { --deck-fit: 1; min-block-size: 0; min-inline-size: 0; display: flex; flex-direction: column; justify-content: flex-start; font-size: calc(1em * var(--deck-fit)); overflow: hidden; }
+.deck-slot > :first-child { margin-block-start: 0; }
+.deck-slot > :last-child { margin-block-end: 0; }
+.deck-slide :is(h1, h2, h3, h4, .deck-h) { font-family: var(--deck-heading); font-weight: 700; line-height: 1.15; margin: 0 0 0.55em; text-wrap: balance; letter-spacing: -0.01em; }
+.deck-slide :is(h1, .deck-h1) { font-size: 2.1em; }
+.deck-slide :is(h2, .deck-h2) { font-size: 1.6em; }
+.deck-slide :is(h3, .deck-h3) { font-size: 1.25em; color: var(--deck-primary); }
+.deck-slide :is(p, ul, ol, blockquote, pre, .deck-table, .deck-block) { margin-block: 0 0.7em; }
+.deck-slide :is(ul, ol) { padding-inline-start: 1.2em; }
+.deck-slide li { margin-block-end: 0.3em; }
+.deck-slide li::marker { color: var(--deck-primary); }
+.deck-slide .deck-tasks { list-style: none; padding-inline-start: 0; }
+.deck-slide .deck-tasks input { font-size: inherit; inline-size: 0.8em; block-size: 0.8em; margin: 0; margin-inline-end: 0.5em; vertical-align: -0.05em; accent-color: var(--deck-primary); }
+.deck-slide strong { color: var(--deck-primary); }
+.deck-slide a { color: var(--deck-primary); }
+.deck-slide code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; background: var(--deck-soft); padding: 0.05em 0.3em; border-radius: 0.2em; }
+.deck-slide pre { background: color-mix(in srgb, var(--deck-ink) 6%, var(--deck-paper)); padding: 0.8em 1em; border-radius: calc(var(--deck-radius) * 0.6); overflow: hidden; font-size: 0.75em; line-height: 1.45; text-align: start; }
+.deck-slide pre code { background: none; padding: 0; font-size: 1em; }
+.deck-slide pre.has-marks .deck-line:not(.is-marked) { opacity: 0.45; }
+.deck-slide blockquote { border-inline-start: 0.25em solid var(--deck-fill); padding-inline-start: 0.9em; margin-inline: 0; font-style: italic; }
+.deck-slide img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; }
+.deck-slide .deck-picture { flex: 1; min-block-size: 0; display: grid; place-items: center; }
+.deck-slide .deck-picture img { block-size: 100%; }
+.deck-table { overflow: hidden; }
+.deck-slide table { border-collapse: collapse; inline-size: 100%; font-size: 0.85em; }
+.deck-slide :is(th, td) { padding: 0.35em 0.7em; border-block-end: 1px solid var(--deck-line); text-align: start; }
+.deck-slide th { border-block-end: 2px solid var(--deck-primary); font-weight: 700; }
+.deck-slide [data-align="right"] { text-align: end; font-variant-numeric: tabular-nums; }
+.deck-slide [data-align="center"] { text-align: center; }
+.deck-block { position: relative; flex: 1 1 auto; min-block-size: 12cqi; overflow: hidden; }
+.deck-block .deck-chart, .deck-block .deck-diagram { position: absolute; inset: 0; display: grid; place-items: center; }
+.deck-block .deck-diagram img { max-inline-size: 100%; max-block-size: 100%; }
+.deck-block .deck-block-source { display: none; }
+.deck-block.is-failed .deck-block-source { display: block; }
+.deck-number { position: absolute; inset-block-end: 2.6cqi; inset-inline-end: 3cqi; font-size: 1.5cqi; color: var(--deck-muted); font-variant-numeric: tabular-nums; }
+
+/* Layouts from their kit's definition: the paper they are on, where their words sit, how big their heading is. */
+.deck-slide[data-paper="fill"] { background: var(--deck-fill); color: var(--deck-on-fill); }
+.deck-slide[data-paper="ink"] { background: var(--deck-ink); color: var(--deck-paper); }
+.deck-slide[data-paper="soft"] { background: var(--deck-soft); }
+.deck-slide:is([data-paper="fill"], [data-paper="ink"]) :is(strong, a, h3, .deck-h3) { color: inherit; }
+.deck-slide[data-justify="center"] .deck-slot { justify-content: center; }
+.deck-slide[data-justify="end"] .deck-slot { justify-content: flex-end; }
+.deck-slide[data-align="center"] .deck-slot { align-items: center; text-align: center; }
+.deck-slide[data-align="end"] .deck-slot { align-items: flex-end; text-align: end; }
+.deck-slide[data-title="large"] :is(h1, h2, .deck-h1, .deck-h2) { font-size: 2.4em; }
+.deck-slide[data-title="huge"] :is(h1, .deck-h1) { font-size: 2.9em; }
+.deck-slide[data-title="huge"] :is(h2, .deck-h2) { font-size: 2.4em; }
+/* What the usual layouts add to their definition: Slidev's looks for them. */
+.deck-layout-section .deck-slot::before { content: ""; display: block; inline-size: 3em; block-size: 0.3em; background: var(--deck-fill); margin-block-end: 0.8em; border-radius: 0.15em; }
+.deck-layout-statement :is(h1, h2, p, .deck-h1, .deck-h2) { font-size: 2.4em; font-family: var(--deck-heading); font-weight: 700; line-height: 1.2; }
+.deck-slide.deck-layout-fact :is(h1, .deck-h1) { font-size: 5em; color: var(--deck-primary); margin-block-end: 0.15em; }
+.deck-layout-quote blockquote { font-size: 1.7em; border: 0; padding: 0; font-family: var(--deck-heading); }
+/* Scripts without italics keep their upright letters. */
+.deck :is(blockquote, em):is(:lang(ar), :lang(fa), :lang(ur), :lang(he), :lang(ja), :lang(zh), :lang(ko), :lang(hi), :lang(th)) { font-style: normal; }
+.deck-layout-quote blockquote::before { content: "\201C"; display: block; font-size: 2.4em; line-height: 0.6; color: var(--deck-primary); }
+.deck-layout-full .deck-canvas { padding: 0; }
+.deck-slide.has-image .deck-image { background: var(--deck-image) center / cover no-repeat, var(--deck-soft); }
+.deck-layout-image-left.has-image .deck-canvas, .deck-layout-image-right.has-image .deck-canvas { padding: 0; grid-template: "image s-default" 1fr / 1fr 1fr !important; gap: 0; }
+.deck-layout-image-right.has-image .deck-canvas { grid-template-areas: "s-default image" !important; }
+:is(.deck-layout-image-left, .deck-layout-image-right).has-image .deck-image { grid-area: image; }
+:is(.deck-layout-image-left, .deck-layout-image-right).has-image .deck-slot { padding: 6cqi 5cqi; justify-content: center; }
+:is(.deck-layout-image, .deck-layout-cover).has-image .deck-image { position: absolute; inset: 0; }
+:is(.deck-layout-image, .deck-layout-cover).has-image .deck-slot { position: relative; color: #fff; text-shadow: 0 0.05em 0.4em rgb(0 0 0 / 0.6); }
+.deck-layout-cover.has-image .deck-image::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.1)); }
+.deck-class-invert { background: var(--deck-ink); color: var(--deck-paper); }
+.deck-class-text-center .deck-slot { text-align: center; align-items: center; }
+
+/* Steps: what a click shows next, there but unseen until then. */
+.deck-step { transition: opacity 0.3s, translate 0.3s; }
+.deck-step:not(.is-on) { opacity: 0; visibility: hidden; translate: 0 0.3em; }
+.deck.is-editing .deck-step:not(.is-on), .deck.is-overview .deck-step:not(.is-on), .deck-print .deck-step { opacity: 1; visibility: visible; translate: none; }
+
+/* Its bar. */
+.deck-bar { display: flex; align-items: center; gap: 0.25rem; font: 0.85rem/1 system-ui, sans-serif; color: var(--deck-muted); }
+.deck-bar button { display: inline-grid; place-items: center; min-inline-size: 2.25rem; min-block-size: 2.25rem; padding: 0 0.5rem; border: 0; border-radius: 0.5rem; background: none; color: var(--deck-ink); font: inherit; cursor: pointer; }
+.deck-bar button:hover { background: color-mix(in srgb, var(--deck-ink) 8%, transparent); }
+.deck-bar button:focus-visible { outline: 2px solid var(--deck-primary); outline-offset: 1px; }
+.deck-bar button:disabled { opacity: 0.35; cursor: default; }
+.deck-bar button[aria-pressed="true"] { background: color-mix(in srgb, var(--deck-primary) 18%, transparent); }
+.deck-bar svg { inline-size: 1.15rem; block-size: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.deck-bar [dir="rtl"] .deck-flip, .deck[dir="rtl"] .deck-flip { scale: -1 1; }
+.deck-where { font-variant-numeric: tabular-nums; min-inline-size: 4.5em; text-align: center; }
+.deck-bar .deck-gap { flex: 1; }
+
+/* Presented: the stage fills the screen, black around it. */
+.deck-stage:fullscreen { display: grid; place-items: center; background: #000; }
+.deck-stage:fullscreen .deck-slide { inline-size: min(100vw, 100vh * 16 / 9); border-radius: 0; box-shadow: none; }
+.deck-stage:fullscreen .deck-slide:not(.is-shown) { inset-block-start: 50%; translate: 0 -50%; }
+
+/* The presenter's view: this slide, the next, the notes and the time. */
+.deck-presenter { display: none; }
+.deck.is-presenting { grid-template: "stage next" auto "stage notes" 1fr "bar bar" auto / 3fr 2fr; min-block-size: 70vh; }
+.deck.is-presenting .deck-stage { grid-area: stage; align-self: start; }
+.deck.is-presenting .deck-presenter { display: contents; }
+.deck.is-presenting .deck-bar { grid-area: bar; }
+.deck-next { grid-area: next; display: grid; gap: 0.3rem; font: 0.8rem system-ui, sans-serif; color: var(--deck-muted); }
+.deck-next .deck-slide { position: relative; visibility: visible; }
+.deck-notes { grid-area: notes; overflow: auto; padding: 0.8rem 1rem; border-radius: 0.6rem; background: color-mix(in srgb, var(--deck-ink) 5%, transparent); font: 1.1rem/1.5 system-ui, sans-serif; white-space: pre-wrap; }
+.deck-clock { font-variant-numeric: tabular-nums; font-size: 1.2rem; color: var(--deck-ink); }
+
+/* All the slides at once. */
+.deck.is-overview .deck-stage { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.8rem; view-transition-name: none; }
+.deck.is-overview .deck-slide { position: relative; visibility: visible; cursor: pointer; }
+.deck.is-overview .deck-slide.is-shown { box-shadow: 0 0 0 3px var(--deck-primary); }
+
+/* Changed by hand: the Markdown beside the slides, and words changed on a slide in place. */
+.deck.is-editing { grid-template: "source stage" auto "source bar" 1fr / minmax(18rem, 2fr) 3fr; align-items: start; }
+.deck.is-editing .deck-stage { grid-area: stage; }
+.deck.is-editing .deck-bar { grid-area: bar; }
+.deck-source { display: none; }
+.deck.is-editing .deck-source { display: block; grid-area: source; inline-size: 100%; block-size: min(80vh, 48rem); resize: vertical; padding: 0.8rem; border: 1px solid var(--deck-line); border-radius: 0.6rem; background: var(--deck-paper); color: var(--deck-ink); font: 0.85rem/1.55 ui-monospace, Menlo, Consolas, monospace; tab-size: 2; }
+.deck.is-editing [data-edit] { cursor: text; border-radius: 0.15em; }
+.deck.is-editing [data-edit]:hover { box-shadow: 0 0 0 0.12em color-mix(in srgb, var(--deck-primary) 45%, transparent); }
+.deck [data-edit][contenteditable] { outline: 0.12em solid var(--deck-primary); outline-offset: 0.1em; }
+.deck-slide[data-overflow] { box-shadow: 0 0 0 3px #c92a2a; }
+@media (max-width: 52rem) { .deck.is-editing, .deck.is-presenting { grid-template: none; display: grid; } .deck.is-editing .deck-source { block-size: 40vh; } .deck.is-presenting .deck-presenter { display: grid; } }
+
+/* Transitions between slides, as Slidev names them; none for those who'd rather not. */
+::view-transition-group(deck-stage) { animation-duration: 0.45s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+html[data-deck-transition~="fade"]::view-transition-old(deck-stage) { animation: 0.35s ease both deck-out-fade; }
+html[data-deck-transition~="fade"]::view-transition-new(deck-stage) { animation: 0.35s ease both deck-in-fade; }
+html[data-deck-transition~="slide-left"]::view-transition-old(deck-stage) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both deck-out-start; }
+html[data-deck-transition~="slide-left"]::view-transition-new(deck-stage) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both deck-in-end; }
+html[data-deck-transition~="slide-right"]::view-transition-old(deck-stage) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both deck-out-end; }
+html[data-deck-transition~="slide-right"]::view-transition-new(deck-stage) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both deck-in-start; }
+html[data-deck-transition~="slide-up"]::view-transition-old(deck-stage) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both deck-out-up; }
+html[data-deck-transition~="slide-up"]::view-transition-new(deck-stage) { animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both deck-in-up; }
+html[data-deck-transition~="morph"]::view-transition-old(deck-stage) { animation: 0.3s ease both deck-out-fade; }
+html[data-deck-transition~="morph"]::view-transition-new(deck-stage) { animation: 0.3s ease both deck-in-fade; }
+html[data-deck-transition~="morph"]::view-transition-group(*) { animation-duration: 0.6s; }
+@keyframes deck-out-fade { to { opacity: 0; } }
+@keyframes deck-in-fade { from { opacity: 0; } }
+@keyframes deck-out-start { to { translate: -30% 0; opacity: 0; } }
+@keyframes deck-in-end { from { translate: 30% 0; opacity: 0; } }
+@keyframes deck-out-end { to { translate: 30% 0; opacity: 0; } }
+@keyframes deck-in-start { from { translate: -30% 0; opacity: 0; } }
+@keyframes deck-out-up { to { translate: 0 -20%; opacity: 0; } }
+@keyframes deck-in-up { from { translate: 0 20%; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } .deck-step { transition: none; } }
+@media (forced-colors: active) { .deck-slide { border: 1px solid CanvasText; } .deck-step:not(.is-on) { visibility: hidden; } }
+
+/* On paper: every slide, one a page, every step shown, no bar. */
+@media print {
+  @page { size: 13.333in 7.5in; margin: 0; }
+  .deck-bar, .deck-source, .deck-presenter { display: none !important; }
+  .deck, .deck.is-editing, .deck.is-presenting { display: block; }
+  .deck-slide, .deck-slide:not(.is-shown) { position: relative; visibility: visible; break-after: page; border-radius: 0; box-shadow: none; inline-size: 100vw; }
+  .deck-step:not(.is-on) { opacity: 1; visibility: visible; translate: none; }
+}

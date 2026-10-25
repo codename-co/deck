@@ -1,0 +1,16 @@
+sequenceDiagram
+  autonumber
+  actor C as Customer
+  participant W as Website
+  participant S as Support
+  C->>W: Opens help page
+  W-->>C: Shows articles
+  alt Article solves it
+    C->>W: Thanks
+  else Still stuck
+    C->>S: Opens a ticket
+    activate S
+    S-->>C: Reply within 9 h
+    deactivate S
+  end
+  Note over C,S: Goal: under 4 h by Q1

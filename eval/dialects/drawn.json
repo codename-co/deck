@@ -1,0 +1,418 @@
+[
+ {
+  "dialect": "marp",
+  "model": "qwen3.5-4b-mlx",
+  "id": "ar",
+  "slides": 2,
+  "notes": 1,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.5-4b-mlx",
+  "id": "en",
+  "slides": 19,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.5-4b-mlx",
+  "id": "fr",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.5-4b-mlx",
+  "id": "ja",
+  "slides": 5,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.6-35b-a3",
+  "id": "ar",
+  "slides": 5,
+  "notes": 5,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.6-35b-a3",
+  "id": "en",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.6-35b-a3",
+  "id": "fr",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "marp",
+  "model": "qwen3.6-35b-a3",
+  "id": "ja",
+  "slides": 4,
+  "notes": 4,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.5-4b-mlx",
+  "id": "ar",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.5-4b-mlx",
+  "id": "en",
+  "slides": 7,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.5-4b-mlx",
+  "id": "fr",
+  "slides": 6,
+  "notes": 6,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.5-4b-mlx",
+  "id": "ja",
+  "slides": 8,
+  "notes": 0,
+  "overflow": [
+   8
+  ],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.6-35b-a3",
+  "id": "ar",
+  "slides": 6,
+  "notes": 6,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.6-35b-a3",
+  "id": "en",
+  "slides": 7,
+  "notes": 7,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 1,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.6-35b-a3",
+  "id": "fr",
+  "slides": 6,
+  "notes": 6,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section",
+   "two-cols-header",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "quarto",
+  "model": "qwen3.6-35b-a3",
+  "id": "ja",
+  "slides": 6,
+  "notes": 6,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.5-4b-mlx",
+  "id": "ar",
+  "slides": 2,
+  "notes": 0,
+  "overflow": [
+   1
+  ],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.5-4b-mlx",
+  "id": "en",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.5-4b-mlx",
+  "id": "fr",
+  "slides": 6,
+  "notes": 6,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.5-4b-mlx",
+  "id": "ja",
+  "slides": 0,
+  "empty": true
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.6-35b-a3",
+  "id": "ar",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "section",
+   "two-cols",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.6-35b-a3",
+  "id": "en",
+  "slides": 7,
+  "notes": 7,
+  "overflow": [],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 0,
+  "raw": 2,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.6-35b-a3",
+  "id": "fr",
+  "slides": 6,
+  "notes": 0,
+  "overflow": [
+   4
+  ],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "cover",
+   "default"
+  ],
+  "steps": 6,
+  "raw": 0,
+  "errors": 0
+ },
+ {
+  "dialect": "slidev",
+  "model": "qwen3.6-35b-a3",
+  "id": "ja",
+  "slides": 6,
+  "notes": 6,
+  "overflow": [
+   3
+  ],
+  "charts": "0/0",
+  "diagrams": "0/0",
+  "layouts": [
+   "center",
+   "section",
+   "two-cols",
+   "default"
+  ],
+  "steps": 6,
+  "raw": 0,
+  "errors": 0
+ }
+]

@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> Open
+  Open --> Waiting : asked customer
+  Waiting --> Open : customer replied
+  Open --> Solved
+  Solved --> [*]

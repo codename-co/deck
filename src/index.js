@@ -1,0 +1,12 @@
+// deck for a host: draw a deck into an element, read and write its file, save it as PowerPoint.
+export { createDeck, markdownOf } from './deck.js'
+export { parseDeck } from './parse.js'
+export { renderSlide } from './render.js'
+export { STANDARD, mergeKits, layoutOf, inferLayout, labelOf, tokensFrom } from './kit.js'
+export { tokensOf, schemeOf, LOOKS, readable, contrast } from './look.js'
+export { readDeckFile, writeDeckFile, rendererUrl, escape, unescape } from './file.js'
+export { toPptx } from './pptx.js'
+export { defaultBlocks, libraryAt } from './blocks.js'
+export { inlinePictures } from './pictures.js'
+export { deckIn } from './repair.js'
+export { VERSION } from './version.js'
