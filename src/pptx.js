@@ -152,7 +152,7 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
   if (theme) {
     const colour = (/** @type {string} */ name) => hexOf(rootStyle.getPropertyValue(`--deck-${name}`).trim())
     const series = [colour('fill'), ...[2, 3, 4, 5, 6].map((n) => colour(`series-${n}`))]
-    const scheme = `<a:clrScheme name="Deck"><a:dk1><a:srgbClr val="${colour('ink')}"/></a:dk1><a:lt1><a:srgbClr val="${colour('paper')}"/></a:lt1><a:dk2><a:srgbClr val="${colour('ink')}"/></a:dk2><a:lt2><a:srgbClr val="${colour('soft')}"/></a:lt2>${series.map((c, n) => `<a:accent${n + 1}><a:srgbClr val="${c}"/></a:accent${n + 1}>`).join('')}<a:hlink><a:srgbClr val="${colour('primary')}"/></a:hlink><a:folHlink><a:srgbClr val="${colour('primary')}"/></a:folHlink></a:clrScheme>`
+    const scheme = /* xml */ `<a:clrScheme name="Deck"><a:dk1><a:srgbClr val="${colour('ink')}"/></a:dk1><a:lt1><a:srgbClr val="${colour('paper')}"/></a:lt1><a:dk2><a:srgbClr val="${colour('ink')}"/></a:dk2><a:lt2><a:srgbClr val="${colour('soft')}"/></a:lt2>${series.map((c, n) => `<a:accent${n + 1}><a:srgbClr val="${c}"/></a:accent${n + 1}>`).join('')}<a:hlink><a:srgbClr val="${colour('primary')}"/></a:hlink><a:folHlink><a:srgbClr val="${colour('primary')}"/></a:folHlink></a:clrScheme>`
     zip.file('ppt/theme/theme1.xml', theme.replace(/<a:clrScheme[\s\S]*?<\/a:clrScheme>/, scheme))
   }
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' })

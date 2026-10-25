@@ -11,7 +11,7 @@ import css from './deck.css'
 const me = /** @type {HTMLScriptElement | null} */ (document.currentScript)
 const base = me?.dataset.base ?? 'https://cdn.jsdelivr.net/npm/'
 
-const PAGE = `html, body { margin: 0; } body { min-block-size: 100vh; }
+const PAGE = /* css */ `html, body { margin: 0; } body { min-block-size: 100vh; }
 body > .deck { min-block-size: 100vh; padding: clamp(0.5rem, 3vw, 2rem); align-content: center; justify-items: center; background: color-mix(in srgb, var(--deck-ink) 7%, var(--deck-paper)); }
 body > .deck > .deck-stage, body > .deck > .deck-bar { inline-size: min(100%, (100vh - 7rem) * 16 / 9); }
 body > .deck.is-editing { justify-items: stretch; align-content: start; }
