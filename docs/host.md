@@ -14,7 +14,8 @@ const view = createDeck(document.querySelector('#deck'), {
   scheme: 'auto',               // 'light', 'dark' or 'auto', over the deck's colorSchema
   blocks: { echarts, mermaid }, // drawers for fenced blocks: (box, source) => void | Promise<void>
   resolve: (src) => url,        // a picture's address as the page can load it, or null
-  strings,                      // the bar's words, else deck's own (en, fr, ar, ja)
+  strings,                      // the bar's words, and `slide` and `carousel` for screen readers, else deck's own (en, fr, ar, ja)
+  lex: (markdown) => tokens,    // how a slide's Markdown is read: the host's own marked, its extensions too; else marked's GFM
   headings: 'aria',             // 'real' (h1–h6) or 'aria' (role=heading), for a deck inside a page
   editable: true,
   onChange: (source) => {},     // after each change, by the Markdown or on a slide

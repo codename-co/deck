@@ -4,19 +4,21 @@
 // the presenter's view (this slide, the next, the notes, the time) and all slides at once; light
 // or dark; changed as Markdown beside the slides, or in place on a slide, live. Host-agnostic:
 // the host gives the drawers of ```echarts and ```mermaid, how a picture's address resolves, its
-// words, and what to do when the deck changes or is saved.
+// words, how a slide's Markdown is read (its own marked, with its extensions), and what to do when
+// the deck changes or is saved.
 import { parseDeck } from './parse.js'
 import { renderSlide, h } from './render.js'
 import { tokensOf, schemeOf, VOICES } from './look.js'
 import { mergeKits } from './kit.js'
 import { stringsFor } from './strings.js'
+import { Lexer } from 'marked'
 
 /** @typedef {import('./parse.js').Deck} Deck */
 /**
  * @typedef {{
  *   source: string, lang?: string, dir?: string, kit?: Record<string, any>, scheme?: 'light' | 'dark' | 'auto',
  *   blocks?: Record<string, import('./render.js').Drawer>, resolve?: (src: string) => string | null,
- *   strings?: Record<string, string>, headings?: 'real' | 'aria', editable?: boolean,
+ *   strings?: Record<string, string>, headings?: 'real' | 'aria', editable?: boolean, lex?: (markdown: string) => any[],
  *   onChange?: (source: string) => void, onSave?: (source: string) => void, onExport?: (deck: DeckView) => void,
  * }} Options
  */
@@ -60,7 +62,7 @@ export function createDeck(root, options) {
   root.classList.add('deck')
   root.lang = lang
   root.dir = dir
-  const stage = h('div', { class: 'deck-stage', tabindex: 0, role: 'region', 'aria-roledescription': 'carousel', 'aria-label': words.deck })
+  const stage = h('div', { class: 'deck-stage', tabindex: 0, role: 'region', 'aria-roledescription': words.carousel, 'aria-label': words.deck })
   const where = h('span', { class: 'deck-where', 'aria-live': 'polite' })
   const button = (/** @type {string} */ name, /** @type {string} */ label, /** @type {() => void} */ act) => {
     const b = h('button', { type: 'button', 'aria-label': label, 'data-act': name }, [icon(name)])
@@ -115,6 +117,7 @@ export function createDeck(root, options) {
   /** @type {import('./render.js').Context} */
   const context = {
     blocks: options.blocks ?? {}, resolve: options.resolve ?? ((src) => src), headings: options.headings ?? 'real', number: (n) => number(n), total: 0, kit: mergeKits().kit,
+    lex: options.lex ?? ((markdown) => new Lexer({ gfm: true }).lex(markdown)), slide: words.slide,
   }
 
   function draw() {

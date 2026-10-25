@@ -90,7 +90,7 @@ Commits carry no Co-Authored-By or Claude-Session trailer: `.claude/settings.jso
 
 ## Status
 
-0.1.0, not published. It grew from Jean's phase 0 spike (October 2026); [docs/findings.md](docs/findings.md) says what was measured.
+0.1.1, on npm as `@codename/deck`. It grew from Jean's phase 0 spike (October 2026); [docs/findings.md](docs/findings.md) says what was measured.
 
 ## Licence
 

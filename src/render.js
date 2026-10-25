@@ -4,13 +4,12 @@
 // source (data-edit, offsets), so an edit made on the slide goes back into the Markdown. HTML a
 // deck holds is not drawn: Slidev's <v-click> and <v-clicks> become steps, <br> a line break, and
 // any other tag gives up its words alone. ```echarts and ```mermaid go to the host's drawers.
-import { Lexer } from 'marked'
 import { STANDARD, inferLayout, ALIASES } from './kit.js'
 
 /** @typedef {import('./parse.js').Slide} Slide */
 /** @typedef {import('./parse.js').Slot} Slot */
 /** @typedef {(element: HTMLElement, source: string) => void | Promise<void>} Drawer */
-/** @typedef {{ blocks: Record<string, Drawer>, resolve: (src: string) => string | null, headings: 'real' | 'aria', number: (n: number) => string, total: number, kit: import('./kit.js').Kit }} Context */
+/** @typedef {{ blocks: Record<string, Drawer>, resolve: (src: string) => string | null, headings: 'real' | 'aria', number: (n: number) => string, total: number, kit: import('./kit.js').Kit, lex: (markdown: string) => any[], slide: string }} Context */
 
 /**
  * @param {string} tag @param {Record<string, string | number | boolean | undefined>} [attributes]
@@ -47,7 +46,7 @@ export function renderSlide(slide, context) {
   const section = h('section', {
     class: ['deck-slide', `deck-layout-${layout}`, ...classes.map((name) => `deck-class-${name}`)].join(' '),
     'data-index': slide.index, 'data-layout': layout, 'data-paper': definition.paper, 'data-align': definition.align, 'data-justify': definition.justify, 'data-title': definition.title,
-    'aria-roledescription': 'slide', role: 'group',
+    'aria-roledescription': context.slide, role: 'group',
   })
   // Its grid, from the layout's definition, through the CSSOM: areas named s-<slot>, as `default` is no name CSS allows.
   const canvas = h('div', { class: 'deck-canvas' })
@@ -79,7 +78,7 @@ export function renderSlide(slide, context) {
 
 /** @param {Slot} slot @param {Context} context @param {{ step: number }} counter @returns {Node[]} */
 function blocks(slot, context, counter) {
-  const tokens = new Lexer({ gfm: true }).lex(slot.text)
+  const tokens = context.lex(slot.text)
   /** @type {Node[]} */
   const out = []
   let at = slot.start, mode = /** @type {'' | 'click' | 'clicks'} */ ('')
