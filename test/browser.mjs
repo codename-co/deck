@@ -146,6 +146,26 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     await page.close()
   }
 
+  // Over http, where a page reads its own pictures back as a file from disk can't: each slide that shows a picture (one alone
+  // on its line, one beside the words, a diagram) holds it in PowerPoint, at its size.
+  const served = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 })
+  await served.goto('http://localhost:4591/examples/en.deck.html')
+  await served.waitForFunction(() => document.querySelectorAll('.deck-diagram img').length > 0, null, { timeout: 30000 }).catch(() => {})
+  const pictureless = await served.evaluate(async () => {
+    const { PptxGenJS, JSZip } = await window.deckTools.libraries()
+    const zip = await JSZip.loadAsync((await window.deckTools.toPptx(window.deckView, { PptxGenJS, JSZip })).blob)
+    const out = []
+    for (const [i, slide] of window.deckView.slides().entries()) {
+      if (!slide.querySelector('.deck-picture img, .deck-image, .deck-diagram img')) continue
+      const pictures = (await zip.file(`ppt/slides/slide${i + 1}.xml`).async('string')).match(/<p:pic>[\s\S]*?<\/p:pic>/g) ?? []
+      if (!pictures.length || pictures.some((one) => /<a:ext cx="0"|<a:ext cx="\d+" cy="0"/.test(one))) out.push(i + 1)
+    }
+    return out
+  })
+  if (pictureless.length) fail(`${name} en pptx over http: no picture, or one without a size, on slides ${pictureless}`)
+  log(`${name} en pptx over http: ${pictureless.length ? `no picture on slides ${pictureless}` : 'a picture on each slide that shows one'}`)
+  await served.close()
+
   // Scripts off: the Markdown, readable as it is.
   const off = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 900, height: 900 } })
   const plain = await off.newPage()

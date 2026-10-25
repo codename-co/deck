@@ -10,16 +10,17 @@ const en = readFileSync(new URL('../examples/en.md', import.meta.url), 'utf8')
 
 test('slides split as Slidev splits them, settings and notes kept', () => {
   const deck = parseDeck(en)
-  assert.equal(deck.slides.length, 11)
+  assert.equal(deck.slides.length, 12)
   assert.equal(deck.settings.title, 'A second oven')
   assert.equal(deck.settings.themeConfig.primary, '#f7c531')
   assert.equal(deck.slides[0].settings.layout, 'cover')
   assert.equal(deck.slides[0].notes, 'Thank everyone for coming. Two minutes on why, three on the numbers.')
   assert.deepEqual(deck.slides[1].slots.map((s) => s.name), ['default', 'right'])
   assert.match(deck.slides[1].notes, /ceiling in May/)
-  assert.deepEqual(deck.slides[9].slots.map((s) => s.name), ['default', 'left', 'right', 'bottom'])
+  assert.deepEqual(deck.slides[10].slots.map((s) => s.name), ['default', 'left', 'right', 'bottom'])
   assert.equal(deck.slides[4].settings.transition, 'view-transition')
   assert.equal(deck.slides[4].title, 'Paid back in 14 months')
+  assert.equal(deck.slides[6].title, 'The oven we chose')
 })
 
 test("a slot's text is the source's own, from where it starts", () => {

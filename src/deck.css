@@ -33,7 +33,7 @@
 .deck-slide pre.has-marks .deck-line:not(.is-marked) { opacity: 0.45; }
 .deck-slide blockquote { border-inline-start: 0.25em solid var(--deck-fill); padding-inline-start: 0.9em; margin-inline: 0; font-style: italic; }
 .deck-slide img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; }
-.deck-slide .deck-picture { flex: 1; min-block-size: 0; display: grid; place-items: center; }
+.deck-slide .deck-picture { flex: 1; min-block-size: 0; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
 .deck-slide .deck-picture img { block-size: 100%; }
 .deck-table { overflow: hidden; }
 .deck-slide table { border-collapse: collapse; inline-size: 100%; font-size: 0.85em; }

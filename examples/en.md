@@ -81,6 +81,12 @@ transition: view-transition
 
 ---
 
+## The oven we chose
+
+![The oven we chose, from the front](./oven.svg)
+
+---
+
 ## How we decide
 
 ```mermaid

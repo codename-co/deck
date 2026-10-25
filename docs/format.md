@@ -43,7 +43,7 @@ Slidev's form, as `@slidev/parser` splits it, and the parts a deck for knowledge
 - **Code** in fences, with lines marked as Slidev marks them: ` ```ts {2,4-5} `.
 - **Charts:** ` ```echarts ` holding an ECharts option as JSON, data only.
 - **Diagrams:** ` ```mermaid ` holding Mermaid's language.
-- **Markdown** as CommonMark and GFM have it: headings, lists, task lists, tables, quotes, emphasis, links, pictures.
+- **Markdown** as CommonMark and GFM have it: headings, lists, task lists, tables, quotes, emphasis, links, pictures. A picture alone on its line fills what its slot leaves, whole, whatever its own size.
 
 ### Added by deck
 

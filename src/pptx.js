@@ -11,7 +11,8 @@
 import { labelOf } from './kit.js'
 
 const W = 13.333, H = 7.5
-const TEXT = 'h1, h2, h3, h4, h5, h6, .deck-h, p, ul, ol, blockquote'
+// Words: a paragraph that is a picture alone on its line is the picture.
+const TEXT = 'h1, h2, h3, h4, h5, h6, .deck-h, p:not(.deck-picture), ul, ol, blockquote'
 
 /** @param {string} value rgb(…) or #… @returns {string} six hex digits */
 function hexOf(value) {
@@ -121,6 +122,8 @@ export async function toPptx(view, { PptxGenJS, JSZip }) {
         } else {
           const img = block.querySelector('img')
           if (img) {
+            // A slide's pictures are read as they come near the screen: one not read yet is read now, so that it has its size.
+            if (!img.complete) { img.loading = 'eager'; await img.decode().catch(() => {}) }
             const data = await pictureOf(img.src, img.clientWidth * 2, img.clientHeight * 2)
             if (data) { slide.addImage({ data, ...place(img), altText: img.alt }); report.pictures++ }
           }
