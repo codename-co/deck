@@ -46,6 +46,9 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     const t1 = Date.now()
     await page.waitForFunction(([c, d]) => document.querySelectorAll('.deck-chart svg').length >= c && document.querySelectorAll('.deck-diagram img').length >= d, [charts, diagrams], { timeout: 30000 }).catch(() => errors.push('charts or diagrams not drawn in 30 s'))
     const drawnIn = Date.now() - t1
+    // Every chart and diagram drawn, in a mind map's node too, none failed.
+    const undrawn = await page.evaluate(() => [...document.querySelectorAll('.deck-stage .deck-block')].filter((b) => b.classList.contains('is-failed') || !b.querySelector('.deck-chart svg, .deck-diagram img')).map((b) => b.className))
+    if (undrawn.length) errors.push(`not drawn: ${undrawn.join(', ')}`)
     await page.evaluate(() => document.fonts.ready.then(() => window.deckView.fitAll()))
     const overflow = await page.evaluate(() => [...document.querySelectorAll('.deck-slide[data-overflow]')].map((s) => s.getAttribute('data-index')))
     for (let i = 0; i < count; i++) {
@@ -53,6 +56,15 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.waitForTimeout(i === 0 ? 300 : 650)
       await page.locator('.deck-stage').screenshot({ path: join(out, `${name}-${deck}-${String(i + 1).padStart(2, '0')}.png`) })
     }
+    // Mind maps: each word placed inside its map's box, none over another, a line to each but the root.
+    const maps = await page.evaluate(() => [...document.querySelectorAll('.deck-stage .deck-mindmap')].map((map) => {
+      const box = map.getBoundingClientRect(), nodes = [...map.querySelectorAll('.deck-map-node')].map((node) => node.getBoundingClientRect())
+      const inside = nodes.every((r) => r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1)
+      const apart = nodes.every((a, i) => nodes.slice(i + 1).every((b) => a.right <= b.left + 0.5 || b.right <= a.left + 0.5 || a.bottom <= b.top + 0.5 || b.bottom <= a.top + 0.5))
+      return { nodes: nodes.length, lines: map.querySelectorAll('.deck-map-lines path').length, inside, apart }
+    }))
+    for (const map of maps) if (!map.inside || !map.apart || map.lines !== map.nodes - 1) fail(`${name} ${deck} mind map: ${JSON.stringify(map)}`)
+    if (maps.length) log(`${name} ${deck} mind maps: ${JSON.stringify(maps)}`)
     if (errors.length || overflow.length) fail(`${name} ${deck}: ${errors.join(' | ')} overflow [${overflow}]`)
     log(`${name} ${deck}: ${count} slides, first slide in ${firstSlide} ms, ${charts} charts + ${diagrams} diagrams drawn in ${drawnIn} ms, overflowing: [${overflow}], errors: ${errors.length ? errors.join(' | ') : 'none'}`)
 
@@ -128,6 +140,12 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
     // Saved as PowerPoint, in each scheme for the English deck.
     if (deck !== 'tricky' && deck !== 'en.embedded') for (const scheme of deck === 'en' ? ['light', 'dark'] : ['shown']) {
       if (scheme !== 'shown') { await page.evaluate((s) => window.deckView.setScheme(s), scheme); await page.waitForTimeout(500) }
+      // A diagram takes the scheme's colours: its ink is the slide's.
+      const inked = await page.evaluate(() => [...document.querySelectorAll('.deck-stage .deck-diagram img')].every((img) => {
+        const ink = getComputedStyle(img.closest('.deck-slide')).getPropertyValue('--deck-ink').trim().toLowerCase()
+        return decodeURIComponent(img.getAttribute('src') ?? '').toLowerCase().includes(`--pele-fg:${ink}`)
+      }))
+      if (!inked) fail(`${name} ${deck} diagrams not in the ${scheme} scheme's colours`)
       // A fresh copy of the source, as the English deck was edited above.
       const t2 = Date.now()
       const made = await page.evaluate(async () => {
@@ -148,23 +166,36 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]]) {
 
   // Over http, where a page reads its own pictures back as a file from disk can't: each slide that shows a picture (one alone
   // on its line, one beside the words, a diagram) holds it in PowerPoint, at its size.
+  for (const deck of ['en', 'ja']) {
   const served = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 })
-  await served.goto('http://localhost:4591/examples/en.deck.html')
-  await served.waitForFunction(() => document.querySelectorAll('.deck-diagram img').length > 0, null, { timeout: 30000 }).catch(() => {})
-  const pictureless = await served.evaluate(async () => {
+  await served.goto(`http://localhost:4591/examples/${deck}.deck.html`)
+  await served.waitForFunction(() => [...document.querySelectorAll('.deck-block')].every((b) => b.querySelector('.deck-chart svg, .deck-diagram img')), null, { timeout: 30000 }).catch(() => {})
+  const { pictureless, mapless } = await served.evaluate(async () => {
     const { PptxGenJS, JSZip } = await window.deckTools.libraries()
     const zip = await JSZip.loadAsync((await window.deckTools.toPptx(window.deckView, { PptxGenJS, JSZip })).blob)
-    const out = []
+    const out = [], maps = []
     for (const [i, slide] of window.deckView.slides().entries()) {
+      // A mind map as PowerPoint's shapes: a curve a line, a box with words for each of its words.
+      const map = slide.querySelector('.deck-mindmap')
+      if (map) {
+        const xml = await zip.file(`ppt/slides/slide${i + 1}.xml`).async('string')
+        const said = [...xml.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1].replace(/&(apos|quot|lt|gt|amp);/g, (_, e) => ({ apos: "'", quot: '"', lt: '<', gt: '>', amp: '&' })[e])).join('\n')
+        const curves = (xml.match(/<a:custGeom>/g) ?? []).length, words = [...map.querySelectorAll('.deck-map-node:not(.has-block), .deck-map-words')].filter((node) => !said.includes(node.textContent.trim()))
+        // A chart in a node is PowerPoint's own, a diagram a picture.
+        const figures = (xml.match(/<c:chart |<p:pic>/g) ?? []).length, inNodes = map.querySelectorAll('.deck-map-node .deck-block').length
+        if (curves !== map.querySelectorAll('.deck-map-lines path').length || words.length || figures < inNodes) maps.push(`slide ${i + 1}: ${curves} curves, ${figures} of ${inNodes} charts and diagrams, missing ${words.map((w) => w.textContent)}`)
+      }
       if (!slide.querySelector('.deck-picture img, .deck-image, .deck-diagram img')) continue
       const pictures = (await zip.file(`ppt/slides/slide${i + 1}.xml`).async('string')).match(/<p:pic>[\s\S]*?<\/p:pic>/g) ?? []
       if (!pictures.length || pictures.some((one) => /<a:ext cx="0"|<a:ext cx="\d+" cy="0"/.test(one))) out.push(i + 1)
     }
-    return out
+    return { pictureless: out, mapless: maps }
   })
-  if (pictureless.length) fail(`${name} en pptx over http: no picture, or one without a size, on slides ${pictureless}`)
-  log(`${name} en pptx over http: ${pictureless.length ? `no picture on slides ${pictureless}` : 'a picture on each slide that shows one'}`)
+  if (mapless.length) fail(`${name} ${deck} pptx mind map: ${mapless.join(' | ')}`)
+  if (pictureless.length) fail(`${name} ${deck} pptx over http: no picture, or one without a size, on slides ${pictureless}`)
+  log(`${name} ${deck} pptx over http: ${pictureless.length ? `no picture on slides ${pictureless}` : 'a picture on each slide that shows one'}`)
   await served.close()
+  }
 
   // Scripts off: the Markdown, readable as it is.
   const off = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 900, height: 900 } })

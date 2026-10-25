@@ -2,8 +2,10 @@
 // from `base` (a CDN by default) the first time a slide needs it, never before. A chart is data,
 // read with JSON.parse; it takes the deck's colours and type, light or dark, and is drawn as SVG.
 // A diagram is drawn by Pele from Mermaid's language as SVG, then shown as a picture, so nothing it
-// makes runs or joins the page; its words are its picture's text for whoever can't see it. A host gives
-// its own drawers instead.
+// makes runs or joins the page; its words are its picture's text for whoever can't see it; its colours
+// (a pie's, a chart's too) are the deck's, again when the scheme changes. Options after a fence's
+// language, as Slidev writes them (```mermaid {scale: 0.8}), reach the drawer. A host gives its own
+// drawers instead.
 
 /** @typedef {{ base: string, root: HTMLElement, versions?: { echarts?: string, pele?: string } }} Where */
 
@@ -34,12 +36,22 @@ export function defaultBlocks({ base, root, versions = {} }) {
   const { echarts: chartsAt = '6.1.0', pele: diagramsAt = '1.10.0' } = versions
   /** @type {Set<{ chart: any, option: any, box: HTMLElement }>} */
   const charts = new Set()
+  /** @type {Set<{ picture: HTMLImageElement, svg: string }>} */
+  const diagrams = new Set()
   /** @type {any} */
   let colours = null
   root.addEventListener('deck-scheme', (event) => {
     colours = /** @type {CustomEvent} */ (event).detail.colours
     for (const one of charts) one.chart.setOption(themed(one.option, one.box), true)
+    for (const one of diagrams) one.picture.src = pictured(one.svg)
   })
+  // A diagram's SVG as a picture in the deck's colours, set as Pele's variables inside it.
+  const pictured = (/** @type {string} */ svg) => {
+    const font = getComputedStyle(root).getPropertyValue('--deck-body') || 'system-ui, sans-serif'
+    const series = Array.from({ length: 8 }, (_, n) => `--pele-series-${n + 1}:${colours?.series?.[n % (colours?.series?.length || 1)]}`).join(';')
+    const look = `--pele-bg:transparent;--pele-fg:${colours?.ink};--pele-muted:${colours?.muted};--pele-line:${colours?.muted};--pele-surface:${colours?.soft};--pele-surface-alt:${colours?.line};--pele-border:${colours?.primary};--pele-accent:${colours?.primary};${series};--pele-font:${font.replace(/[<>"]/g, '')}`
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/^(<svg\b[^>]*>)/, `$1<style>svg{${look}}</style>`))}`
+  }
   // Its type sized with the slide's, its category axis read from the right in a language written so.
   const themed = (/** @type {any} */ option, /** @type {HTMLElement} */ box) => {
     const size = parseFloat(getComputedStyle(box).fontSize) || 16
@@ -61,7 +73,7 @@ export function defaultBlocks({ base, root, versions = {} }) {
     }
   }
   return {
-    /** @param {HTMLElement} box @param {string} source */
+    /** @param {HTMLElement} box @param {string} source the chart's option, as JSON */
     async echarts(box, source) {
       const option = JSON.parse(source)
       const echarts = await script(libraryAt(base, 'echarts', chartsAt, 'dist/echarts.min.js'), 'echarts')
@@ -79,17 +91,22 @@ export function defaultBlocks({ base, root, versions = {} }) {
     },
     /**
      * A diagram written in Mermaid's language, drawn by Pele (Obsidian's, MIT): every kind Mermaid
-     * 12.1 has, no DOM needed, an SVG with no script or HTML in it. Shown as a picture, its colours
-     * the deck's, set as Pele's variables inside it. @param {HTMLElement} box @param {string} source
+     * 12.1 has, no DOM needed, an SVG with no script or HTML in it; its own settings (a `---` config
+     * block, `%%{init: …}%%`) read by Pele, the fence's options too, `scale` the share of its box it
+     * takes. Shown as a picture, its colours the deck's. @param {HTMLElement} box @param {string} source
+     * @param {Record<string, any>} [options]
      */
-    async mermaid(box, source) {
+    async mermaid(box, source, options = {}) {
       const pele = await script(libraryAt(base, 'pele', diagramsAt, 'dist/pele.global.js'), 'pele')
       const font = getComputedStyle(root).getPropertyValue('--deck-body') || 'system-ui, sans-serif'
-      const { svg } = pele.render(source, { fontFamily: font, links: false, images: false, autoDirection: true, maxWidth: Math.max(320, box.clientWidth * 1.4) })
-      const look = `--pele-bg:transparent;--pele-fg:${colours?.ink};--pele-muted:${colours?.muted};--pele-line:${colours?.muted};--pele-surface:${colours?.soft};--pele-surface-alt:${colours?.line};--pele-border:${colours?.primary};--pele-accent:${colours?.primary};--pele-font:${font.replace(/[<>"]/g, '')}`
+      const { scale, theme, ...config } = options
+      const { svg } = pele.render(source, { fontFamily: font, links: false, images: false, autoDirection: true, maxWidth: Math.max(320, box.clientWidth * 1.4), ...(Object.keys(config).length && { config }) })
       const picture = document.createElement('img')
       picture.alt = source
-      picture.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/^(<svg\b[^>]*>)/, `$1<style>svg{${look}}</style>`))}`
+      picture.src = pictured(svg)
+      const share = Number(scale)
+      if (share > 0 && share < 1) for (const side of ['max-inline-size', 'max-block-size']) picture.style.setProperty(side, `${share * 100}%`)
+      diagrams.add({ picture, svg })
       const place = document.createElement('div')
       place.className = 'deck-diagram'
       place.append(picture)

@@ -10,14 +10,14 @@ const en = readFileSync(new URL('../examples/en.md', import.meta.url), 'utf8')
 
 test('slides split as Slidev splits them, settings and notes kept', () => {
   const deck = parseDeck(en)
-  assert.equal(deck.slides.length, 12)
+  assert.equal(deck.slides.length, 13)
   assert.equal(deck.settings.title, 'A second oven')
   assert.equal(deck.settings.themeConfig.primary, '#f7c531')
   assert.equal(deck.slides[0].settings.layout, 'cover')
   assert.equal(deck.slides[0].notes, 'Thank everyone for coming. Two minutes on why, three on the numbers.')
   assert.deepEqual(deck.slides[1].slots.map((s) => s.name), ['default', 'right'])
   assert.match(deck.slides[1].notes, /ceiling in May/)
-  assert.deepEqual(deck.slides[10].slots.map((s) => s.name), ['default', 'left', 'right', 'bottom'])
+  assert.deepEqual(deck.slides[11].slots.map((s) => s.name), ['default', 'left', 'right', 'bottom'])
   assert.equal(deck.slides[4].settings.transition, 'view-transition')
   assert.equal(deck.slides[4].title, 'Paid back in 14 months')
   assert.equal(deck.slides[6].title, 'The oven we chose')
@@ -80,7 +80,9 @@ test("a kit's layouts are checked against the grammar, and nothing but layout ge
   assert.ok(kit.layouts.good && kit.layouts['two-cols'] && !kit.layouts.worse)
   assert.equal(problems.length, 2)
   assert.equal(kit.tokens.primary, '#c2410c')
-  assert.equal(Object.keys(STANDARD.layouts).length, 17)
+  assert.equal(Object.keys(STANDARD.layouts).length, 18)
+  assert.deepEqual([STANDARD.layouts.mindmap.lists, STANDARD.layouts.default.lists], ['mindmap', 'bullets'])
+  assert.equal(layoutOf({ lists: 'tree' }).problems[0], 'lists tree is not one of bullets, mindmap')
 })
 
 test("a kit's logo is a picture inside it, its corner one of four; a usual layout turned off goes; dark tokens merge; a chart's colours its own", () => {
@@ -216,4 +218,70 @@ test('Pele draws every kind of diagram the samples hold, with no DOM and nothing
     assert.match(svg, /^<svg\b/, file)
     assert.doesNotMatch(svg, /<script|<foreignObject|\son\w+=/i, file)
   }
+})
+
+import { itemsOf, mergeItems, layoutMap, curveOf } from '../src/mindmap.js'
+
+test("a mind map's list is read by its indentation, each item's words where they are in the source", () => {
+  const source = 'intro\n- Zoo\n  - Lions\n    - **Big** ones\n  - Penguins\n- Money\n\t* Bus\n  going on\n1. Rain\n'
+  const items = itemsOf(source.slice(6), 6)
+  const shape = (/** @type {any[]} */ list) => list.map((item) => [item.text, ...(item.children.length ? [shape(item.children)] : [])])
+  assert.deepEqual(shape(items), [['Zoo', [['Lions', [['**Big** ones']]], ['Penguins']]], ['Money', [['Bus going on']]], ['Rain']])
+  for (const item of [items[0], items[0].children[0].children[0], items[2]]) assert.equal(source.slice(item.start, item.end), item.text)
+  assert.equal(source.slice(items[1].children[0].start, items[1].children[0].end), 'Bus\n  going on')
+})
+
+test("lists are merged into one map: items of the same words at the same place are one, their children together", () => {
+  const one = itemsOf('- Trip\n  - Zoo\n    - Lions\n  - Money\n', 0), two = itemsOf('- trip\n  - *Zoo*\n    - Penguins\n  - Rain\n', 100)
+  two[0].children[1].step = true
+  const merged = mergeItems([...one, ...two])
+  assert.equal(merged.length, 1)
+  assert.deepEqual(merged[0].children.map((c) => [c.text, c.children.map((k) => k.text), Boolean(c.step)]), [['Zoo', ['Lions', 'Penguins'], false], ['Money', [], false], ['Rain', [], true]])
+  assert.equal(merged[0].start, 2, 'the first keeps its place in the source')
+  assert.equal(one[0].children[0].children.length, 1, 'the lists given are left as they were')
+  assert.equal(mergeItems([{ text: '', start: 0, end: 0, children: [] }, { text: '', start: 0, end: 0, children: [] }]).length, 2)
+})
+
+test('a mind map is laid out round its root, its branches shared out to both sides, nothing overlapping', () => {
+  const box = (/** @type {number} */ w, /** @type {any[]} */ children = []) => ({ w, h: 1.2, children })
+  const make = () => box(6, [box(4, [box(5), box(5), box(5)]), box(4, [box(3), box(7, [box(3)])]), box(4, [box(5), box(5)]), box(3)])
+  const root = make()
+  const { width, height, lines } = layoutMap(root)
+  /** @type {any[]} */
+  const all = []
+  const walk = (/** @type {any} */ b) => { all.push(b); b.children.forEach(walk) }
+  walk(root)
+  for (const b of all) assert.ok(b.x >= -1e-9 && b.y >= -1e-9 && b.x + b.w <= width + 1e-9 && b.y + b.h <= height + 1e-9)
+  for (const [i, a] of all.entries()) for (const b of all.slice(i + 1)) assert.ok(a.x + a.w <= b.x + 1e-9 || b.x + b.w <= a.x + 1e-9 || a.y + a.h <= b.y + 1e-9 || b.y + b.h <= a.y + 1e-9, 'no two boxes overlap')
+  // Clockwise: the first branches to the right, top to bottom, the rest to the left, bottom to top.
+  const [a, b, c, d] = root.children
+  assert.deepEqual([a, b, c, d].map((one) => one.side), [1, 1, -1, -1])
+  assert.ok(a.y < b.y && d.y < c.y)
+  assert.equal(lines.length, all.length - 1)
+  assert.ok(lines.every((line) => line.branch >= 0 && line.branch < 4))
+  // Right to left, the same map mirrored.
+  const mirrored = make()
+  layoutMap(mirrored, { rtl: true })
+  assert.ok(Math.abs(mirrored.children[0].x - (width - a.x - a.w)) < 1e-9 && mirrored.children[0].side === -1)
+  // A map flatter than its box is spread out to it, no wider.
+  const spread = make(), laid = layoutMap(spread, { aspect: 2 })
+  assert.ok(laid.height > height && Math.abs(laid.width - width) < 1e-9 && laid.width / laid.height >= 2 - 1e-6)
+  assert.match(curveOf(lines[0]), /^M[\d.]+ [\d.]+C[\d.]+ [\d.]+ [\d.]+ [\d.]+ [\d.]+ [\d.]+$/)
+})
+
+import { optionsOf } from '../src/render.js'
+
+test("a chart or a diagram fenced under a mind map's item is that item's to draw, its lines never read as items", () => {
+  const source = '- Money\n  ```echarts\n  {"series": []}\n  ```\n- Rain\n  ```mermaid {scale: 0.8}\n  ---\n  config:\n    - not an item\n  ---\n  pie\n    "a": 1\n  ```\n  - Moved\n'
+  const items = itemsOf(source, 0)
+  assert.deepEqual(items.map((item) => [item.text, item.blocks, item.children.map((c) => c.text)]), [
+    ['Money', [{ lang: 'echarts', text: '{"series": []}' }], []],
+    ['Rain', [{ lang: 'mermaid {scale: 0.8}', text: '---\nconfig:\n  - not an item\n---\npie\n  "a": 1' }], ['Moved']],
+  ])
+})
+
+test("a fence's options, as Slidev writes them or as JSON, reach its drawer", () => {
+  assert.deepEqual(optionsOf("mermaid {theme: 'neutral', scale: 0.8}"), { theme: 'neutral', scale: 0.8 })
+  assert.deepEqual(optionsOf('mermaid {"flowchart": {"curve": "linear"}}'), { flowchart: { curve: 'linear' } })
+  assert.deepEqual([optionsOf('echarts'), optionsOf('mermaid {broken')], [{}, {}])
 })

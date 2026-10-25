@@ -55,6 +55,7 @@ A logo shows in its corner, small, or big where a layout says (`logo`: a cover, 
 | `paper` | `paper`, `fill` (the primary), `ink`, `soft` | `paper` |
 | `title` | `normal`, `large`, `huge` | `normal` |
 | `logo` | `small`, `big`, `none`: how the kit's logo shows | `small`; `big` on `cover`, `intro`, `end`; `none` on `image`, `full`, `none` |
+| `lists` | `bullets`, `mindmap`: each slot's lists as lists, or merged into one mind map ([format.md](format.md#a-mind-map)) | `bullets`; `mindmap` on `mindmap` |
 | `pptx` | Title Slide, Title and Content, Section Header, Two Content, Comparison, Title Only, Blank, Content with Caption, Picture with Caption | by its slots |
 | `numbered` | `false` for no slide number | `true` |
 | `art` | Up to 8 names of the kit's `pictures`, drawn over the whole slide, layer over layer, behind the words, as a template draws them | none |
@@ -91,6 +92,7 @@ Each layout's art is what a slide on it shows besides its placeholders, as SVG l
 | `center`, `statement`, `fact`, `quote` | one | Title Only |
 | `image-left`, `image-right` | one, beside the slide's `image` | Picture with Caption |
 | `image`, `full`, `none` | one | Blank |
+| `mindmap` | one, its lists as one mind map | Title Only |
 
 ## A slide that names none
 

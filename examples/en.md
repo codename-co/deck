@@ -98,6 +98,32 @@ flowchart LR
 ```
 
 ---
+layout: mindmap
+---
+
+## What a second oven changes
+
+### Mornings
+
+- Croissants until noon
+- No queue at 7
+
+### Bread
+
+- A batch at noon
+  - For the lunch crowd
+- Rye on Fridays
+
+### People
+
+- A second baker's shift
+- Léa learns the oven
+
+### Mornings
+
+- Coffee with the first batch
+
+---
 layout: quote
 ---
 

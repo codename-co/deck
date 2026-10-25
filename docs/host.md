@@ -12,7 +12,7 @@ const view = createDeck(document.querySelector('#deck'), {
   lang: 'fr', dir: 'ltr',       // else the deck's own, else the page's
   kit,                          // the host's kit: an organisation's, a person's, a project's, merged
   scheme: 'auto',               // 'light', 'dark' or 'auto', over the deck's colorSchema
-  blocks: { echarts, mermaid }, // drawers for fenced blocks: (box, source) => void | Promise<void>
+  blocks: { echarts, mermaid }, // drawers for fenced blocks: (box, source, options) => void | Promise<void>, options those after the fence's language
   resolve: (src) => url,        // a picture's address as the page can load it, or null
   strings,                      // the bar's words, and `slide` and `carousel` for screen readers, else deck's own (en, fr, ar, ja)
   lex: (markdown) => tokens,    // how a slide's Markdown is read: the host's own marked, its extensions too; else marked's GFM
@@ -32,7 +32,7 @@ Every block that can be changed by hand carries `data-edit="from-to"`, the offse
 
 ## Drawers
 
-`defaultBlocks({ base, root, versions })` gives the drawers a file uses alone: ECharts as SVG in the deck's colours and type, its category axis mirrored right to left; Pele for Mermaid's language, its SVG shown as a picture coloured by Pele's variables, its words the picture's text. Each library loads the first time a slide needs it, from `base` (jsDelivr's npm mirror, or a `node_modules/` folder, `libraryAt()`). A host with a strict policy gives its own: Pele's SVG holds style attributes, so it belongs in an image or a worker's output, not in the page's DOM.
+`defaultBlocks({ base, root, versions })` gives the drawers a file uses alone: ECharts as SVG in the deck's colours and type, its category axis mirrored right to left; Pele for Mermaid's language, its SVG shown as a picture coloured by Pele's variables (its charts' series too), again when the scheme changes, its words the picture's text, the fence's options its settings and `scale`. Each library loads the first time a slide needs it, from `base` (jsDelivr's npm mirror, or a `node_modules/` folder, `libraryAt()`). A host with a strict policy gives its own: Pele's SVG holds style attributes, so it belongs in an image or a worker's output, not in the page's DOM.
 
 ## PowerPoint
 
@@ -42,7 +42,7 @@ const { blob, report } = await toPptx(view, { PptxGenJS, JSZip })
 
 A kit from a PowerPoint template, and a kit's tokens out, are `@codename/deck/template`'s (`kitFromTemplate`, `tokensToDtcg`, [kits.md](kits.md)), which a host imports only when it reads or writes one; `logoOf` and `CORNERS` check a kit's logo and its corner before it is kept, and `rgbOf` a colour as deck reads it.
 
-PptxGenJS 4 (its bundle carries JSZip) is the host's to load, on demand. The file is made from the deck as drawn: a slide layout per deck layout, named by its label in the deck's language, with a placeholder for its title and each slot; lists as lists with their levels; tables; bars, lines, areas, pies, rings, points and radars as native charts with their numbers, other charts and diagrams as pictures, and pictures, alone on their line or beside the words, as pictures; a layout's art as one picture on its slide layout; notes; transitions; the kit's colours as the theme. `report` counts slides, charts, tables, pictures and placeholders.
+PptxGenJS 4 (its bundle carries JSZip) is the host's to load, on demand. The file is made from the deck as drawn: a slide layout per deck layout, named by its label in the deck's language, with a placeholder for its title and each slot; lists as lists with their levels; tables; mind maps as PowerPoint's own shapes, a box with words for each node and a curve for each line; bars, lines, areas, pies, rings, points and radars as native charts with their numbers, other charts and diagrams as pictures, and pictures, alone on their line or beside the words, as pictures; a layout's art as one picture on its slide layout; notes; transitions; the kit's colours as the theme. `report` counts slides, charts, tables, pictures, placeholders and mind maps.
 
 ## Files
 

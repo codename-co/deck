@@ -210,7 +210,8 @@ export function createDeck(root, options) {
    */
   function name(slide, toward) {
     const key = (/** @type {Element} */ el) => `${el.tagName}:${el.tagName === 'IMG' ? el.getAttribute('src') : (el.textContent ?? '').trim().slice(0, 80)}`
-    const parts = (/** @type {HTMLElement} */ s) => /** @type {HTMLElement[]} */ ([...s.querySelectorAll('h1, h2, h3, h4, .deck-h, li, p, img, .deck-block, blockquote, .deck-image')])
+    // A mind map's words, not its items, which hold no box of their own.
+    const parts = (/** @type {HTMLElement} */ s) => /** @type {HTMLElement[]} */ ([...s.querySelectorAll('h1, h2, h3, h4, .deck-h, li, p, img, .deck-block, blockquote, .deck-image, .deck-map-node')].filter((el) => !el.matches('.deck-mindmap li')))
     if (toward) {
       const there = new Map(parts(toward).map((el) => [key(el), el]))
       let n = 0

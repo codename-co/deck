@@ -3,19 +3,19 @@
 // deck's own kit holds the usual layouts; a host's (an organisation's, a project's) and the deck
 // file's own `kit:` go over it, in that order. A layout is a grid: its slots by name, the areas
 // they take, its tracks, how its words sit, what paper it is on, how big its logo shows, and the
-// PowerPoint layout it is nearest to, and the art a template draws behind it, layers among the kit's
+// PowerPoint layout it is nearest to, whether its lists are drawn as a mind map, and the art a template draws behind it, layers among the kit's
 // pictures; a kit may turn one of the usual layouts off. Its tokens may hold a logo, a picture inside
 // the kit and never an address, as its pictures are. Everything is checked against a small grammar;
 // what fails is dropped, with a reason. Pure.
 
 /** @typedef {{ required?: boolean, max_words?: number, max_chars?: number, items?: [number, number], item_max_words?: number, heading_max_words?: number, kind?: string }} Budget */
-/** @typedef {{ label?: Record<string, string> | string, intent?: string, use_when?: string, avoid_when?: string, slots: string[], budgets: Record<string, Budget>, areas: string[][], columns: string[], rows: string[], align: 'start' | 'center' | 'end', justify: 'start' | 'center' | 'end', paper: 'paper' | 'fill' | 'ink' | 'soft', title: 'normal' | 'large' | 'huge', logo: 'big' | 'small' | 'none', pptx: string, numbered: boolean, art?: string[] }} Layout */
+/** @typedef {{ label?: Record<string, string> | string, intent?: string, use_when?: string, avoid_when?: string, slots: string[], budgets: Record<string, Budget>, areas: string[][], columns: string[], rows: string[], align: 'start' | 'center' | 'end', justify: 'start' | 'center' | 'end', paper: 'paper' | 'fill' | 'ink' | 'soft', title: 'normal' | 'large' | 'huge', logo: 'big' | 'small' | 'none', lists: 'bullets' | 'mindmap', pptx: string, numbered: boolean, art?: string[] }} Layout */
 /** @typedef {{ name?: string, tokens: Record<string, any>, layouts: Record<string, Layout>, pictures: Record<string, string> }} Kit */
 
 const NAME = /^[a-z][a-z0-9-]{0,31}$/
 const TRACK = /^(auto|min-content|max-content|\d{1,2}(\.\d)?fr|\d{1,3}%)$/
 const PPTX = ['Title Slide', 'Title and Content', 'Section Header', 'Two Content', 'Comparison', 'Title Only', 'Blank', 'Content with Caption', 'Picture with Caption']
-const ENUMS = /** @type {const} */ ({ align: ['start', 'center', 'end'], justify: ['start', 'center', 'end'], paper: ['paper', 'fill', 'ink', 'soft'], title: ['normal', 'large', 'huge'], logo: ['small', 'big', 'none'] })
+const ENUMS = /** @type {const} */ ({ align: ['start', 'center', 'end'], justify: ['start', 'center', 'end'], paper: ['paper', 'fill', 'ink', 'soft'], title: ['normal', 'large', 'huge'], logo: ['small', 'big', 'none'], lists: ['bullets', 'mindmap'] })
 /** The corners a logo sits in, as `logoAt` names them, the first by default. */
 export const CORNERS = ['top-end', 'top-start', 'bottom-end', 'bottom-start']
 
@@ -34,7 +34,7 @@ export const artOf = (value) => (typeof value === 'string' && value.length <= 3_
 /** The names brains give the usual layouts, for the ones deck has. */
 export const ALIASES = /** @type {Record<string, string>} */ ({
   title: 'cover', 'title-slide': 'cover', 'two-columns': 'two-cols', 'two-column': 'two-cols', columns: 'two-cols', comparison: 'two-cols-header',
-  'three-columns': 'three-cols', 'section-header': 'section', divider: 'section', big: 'fact', number: 'fact', 'image-text': 'image-right', closing: 'end', thanks: 'end',
+  'three-columns': 'three-cols', 'section-header': 'section', divider: 'section', big: 'fact', number: 'fact', 'image-text': 'image-right', closing: 'end', thanks: 'end', 'mind-map': 'mindmap', map: 'mindmap',
 })
 
 /** deck's own kit: the usual layouts, the ones Slidev names and the ones PowerPoint has, as data. */
@@ -60,6 +60,7 @@ export const STANDARD = /** @type {Kit} */ ({
     'image-left': { label: { en: 'Picture left', fr: 'Image à gauche' }, pptx: 'Picture with Caption', justify: 'center' },
     'image-right': { label: { en: 'Picture right', fr: 'Image à droite' }, pptx: 'Picture with Caption', justify: 'center' },
     image: { label: { en: 'Picture', fr: 'Image' }, logo: 'none', pptx: 'Blank', numbered: false },
+    mindmap: { label: { en: 'Mind map', fr: 'Carte mentale' }, lists: 'mindmap', pptx: 'Title Only' },
   })).map(([name, given]) => [name, /** @type {Layout} */ (layoutOf(given).layout)])),
 })
 
@@ -112,7 +113,7 @@ export function layoutOf(given) {
   return {
     layout: /** @type {Layout} */ ({
       label, intent: words(given.intent), use_when: words(given.use_when), avoid_when: words(given.avoid_when), slots, budgets, areas: rows, columns, rows: rowTracks,
-      align: pick('align', 'start'), justify: pick('justify', 'start'), paper: pick('paper', 'paper'), title: pick('title', 'normal'), logo: pick('logo', 'small'),
+      align: pick('align', 'start'), justify: pick('justify', 'start'), paper: pick('paper', 'paper'), title: pick('title', 'normal'), logo: pick('logo', 'small'), lists: pick('lists', 'bullets'),
       pptx: PPTX.includes(given.pptx) ? given.pptx : slots.length > 1 ? 'Comparison' : 'Title and Content', numbered: given.numbered !== false, art,
     }),
     problems,

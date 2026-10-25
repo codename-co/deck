@@ -51,6 +51,31 @@ flowchart LR
 ```
 
 ---
+layout: mindmap
+---
+
+## 二台目で変わること
+
+- 費用
+  ```echarts
+  {"series": [{"type": "pie", "radius": ["40%", "70%"], "data": [{"name": "オーブン", "value": 18000}, {"name": "設置", "value": 2500}, {"name": "休業", "value": 900}]}]}
+  ```
+- 朝
+  - 昼までクロワッサン
+  - 7時の行列がなくなる
+- 決め方
+  ```mermaid {scale: 0.9}
+  flowchart LR
+    A[見積もり] --> B[1月に注文]
+  ```
+- 売上
+  ```mermaid
+  pie
+    "クロワッサン": 120
+    "パン": 40
+  ```
+
+---
 layout: end
 ---
 

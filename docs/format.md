@@ -41,8 +41,10 @@ Slidev's form, as `@slidev/parser` splits it, and the parts a deck for knowledge
 - **Notes:** the last HTML comment at a slide's end.
 - **Steps:** `<v-clicks>` and `</v-clicks>` around a list, each on its own line with empty lines around; `<v-click>` around a block.
 - **Code** in fences, with lines marked as Slidev marks them: ` ```ts {2,4-5} `.
-- **Charts:** ` ```echarts ` holding an ECharts option as JSON, data only.
-- **Diagrams:** ` ```mermaid ` holding Mermaid's language.
+- **Charts:** ` ```echarts ` holding an ECharts option as JSON, data only, drawn by ECharts in the deck's colours and type.
+- **Diagrams:** ` ```mermaid ` holding Mermaid's language, drawn by Pele, with its own settings (a `---` block with `config:`, `%%{init: {…}}%%`); its colours, a pie's and a chart's too, are the deck's, light or dark.
+- **A fence's options,** after its language as Slidev writes them, YAML's flow or JSON: ` ```mermaid {scale: 0.8} ` takes at most that share of its box; the others go to Pele as its settings (`theme` aside: the colours are the deck's). They reach a host's drawer as its third argument.
+- **Mind maps:** `layout: mindmap`, its lists drawn as one map (below).
 - **Markdown** as CommonMark and GFM have it: headings, lists, task lists, tables, quotes, emphasis, links, pictures. A picture alone on its line fills what its slot leaves, whole, whatever its own size.
 
 ### Added by deck
@@ -51,6 +53,40 @@ Slidev's form, as `@slidev/parser` splits it, and the parts a deck for knowledge
 - `kit`: tokens and layouts as data ([kits.md](kits.md)).
 - A layout chosen from what a slide holds when it names none.
 - A Morph between two slides that share a heading, a picture or a list item, with `transition: view-transition`.
+- A mind map: a slide on `layout: mindmap` (or a kit's layout with `lists: mindmap`) draws its lists as one map.
+
+### A mind map
+
+````md
+---
+layout: mindmap
+---
+
+## What a second oven changes
+
+### Mornings
+
+- Croissants until noon
+- No queue at 7
+
+### Bread
+
+- A batch at noon
+  - For the lunch crowd
+- Rye on Fridays
+
+### Mornings
+
+- Coffee with the first batch
+````
+
+- **Each item a node,** its indentation its branching, at any depth, with any marker; a line that is no item goes on with the item above it.
+- **Every list on the slide is merged into one map.** A heading just before a list, other than the one the slide opens with, is that list's node. Items with the same words at the same place (emphasis and case aside) are one node, their children together: the slide above has one `Mornings`, with three children.
+- **One root.** When the lists come down to one item, it is the root, and the heading the slide opens with stays its title, unless it says the same. Else the heading the slide opens with is the root, drawn in the middle of the map and not above it; with none, a dot.
+- **Laid out** as maps are drawn by hand: the root in the middle, its branches shared out to either side, clockwise from the side a line ends (the right, the left right to left), each branch in a colour of the charts', the whole shrunk to what the slide leaves it and spread out to its height. Paragraphs before or after the lists stay above or under the map.
+- **Steps:** lists inside `<v-clicks>` show one branch a click.
+- **A chart or a diagram in a node:** a ` ```echarts ` or ` ```mermaid ` block fenced under an item, indented with it, is drawn in that item's node, under its words, at a size of its own.
+- **Changed in place,** each node's words as a list item's are, and in PowerPoint as its own shapes: a box with words for each node, a curve for each line.
 
 ### Also read, as brains write it
 

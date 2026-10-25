@@ -43,6 +43,8 @@
 .deck-slide [data-align="center"] { text-align: center; }
 .deck-block { position: relative; flex: 1 1 auto; min-block-size: 12cqi; overflow: hidden; }
 .deck-block .deck-chart, .deck-block .deck-diagram { position: absolute; inset: 0; display: grid; place-items: center; }
+/* A diagram's picture held to its box, its track sized so its share of it can be. */
+.deck-block .deck-diagram { grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
 .deck-block .deck-diagram img { max-inline-size: 100%; max-block-size: 100%; }
 .deck-block .deck-block-source { display: none; }
 .deck-block.is-failed .deck-block-source { display: block; }
@@ -82,6 +84,32 @@
 .deck-layout-statement :is(h1, h2, p, .deck-h1, .deck-h2) { font-size: 2.4em; font-family: var(--deck-heading); font-weight: 700; line-height: 1.2; }
 .deck-slide.deck-layout-fact :is(h1, .deck-h1) { font-size: 5em; color: var(--deck-primary); margin-block-end: 0.15em; }
 .deck-layout-quote blockquote { font-size: 1.7em; border: 0; padding: 0; font-family: var(--deck-heading); }
+/* A mind map (mindmap.js): its words where its layout puts them, in em of its own type, the whole shrunk to its box; its
+   root on the fill, each branch in a colour of the charts', its lines and its first words' rim. */
+.deck-mindmap { position: relative; flex: 1 1 auto; align-self: stretch; min-block-size: 12cqi; overflow: hidden; }
+.deck-map-plane { position: absolute; top: 50%; left: 50%; translate: -50% -50%; }
+.deck-map-lines { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; }
+.deck-map-lines path { fill: none; stroke: var(--deck-map-colour); stroke-width: 0.07; stroke-linecap: round; }
+.deck-map-lines path[data-depth="1"] { stroke-width: 0.15; }
+.deck-slide .deck-map-tree, .deck-slide .deck-map-tree :is(ul, li) { margin: 0; padding: 0; list-style: none; }
+.deck-slide .deck-mindmap .deck-map-node { position: absolute; inline-size: max-content; max-inline-size: 11em; margin: 0; padding: 0.15em 0.35em; font-family: var(--deck-body); font-size: 0.85em; font-weight: 400; line-height: 1.2; letter-spacing: 0; text-align: center; text-wrap: balance; color: inherit; }
+/* A chart or a diagram in a node, under its words, at a size of its own. */
+.deck-slide .deck-mindmap .deck-map-node.has-block[data-depth] { display: flex; flex-direction: column; align-items: center; gap: 0.2em; max-inline-size: none; }
+.deck-slide .deck-mindmap .deck-map-node .deck-block { flex: none; inline-size: 13em; block-size: 7.5em; min-block-size: 0; margin: 0; font-size: 0.85em; }
+/* Words wrapped beyond the first branches keep to the side their line comes from. */
+.deck-slide .deck-mindmap .deck-map-node[data-side="right"]:not([data-depth="1"]) { text-align: left; }
+.deck-slide .deck-mindmap .deck-map-node[data-side="left"]:not([data-depth="1"]) { text-align: right; }
+.deck-slide .deck-mindmap .deck-map-node[data-depth="0"] { max-inline-size: 9em; padding: 0.55em 1em; font-family: var(--deck-heading); font-size: 1.35em; font-weight: 700; background: var(--deck-fill); color: var(--deck-on-fill); border-radius: 1.2em; }
+.deck-slide .deck-mindmap .deck-map-node[data-depth="0"]:empty { inline-size: 0.8em; block-size: 0.8em; padding: 0; border-radius: 50%; }
+.deck-slide .deck-mindmap .deck-map-node[data-depth="1"] { max-inline-size: 9em; padding: 0.3em 0.8em; font-size: 1em; font-weight: 600; background: color-mix(in srgb, var(--deck-map-colour) 14%, transparent); border: 0.12em solid var(--deck-map-colour); border-radius: 1em; }
+.deck-mindmap [data-branch="1"] { --deck-map-colour: var(--deck-series-1); }
+.deck-mindmap [data-branch="2"] { --deck-map-colour: var(--deck-series-2); }
+.deck-mindmap [data-branch="3"] { --deck-map-colour: var(--deck-series-3); }
+.deck-mindmap [data-branch="4"] { --deck-map-colour: var(--deck-series-4); }
+.deck-mindmap [data-branch="5"] { --deck-map-colour: var(--deck-series-5); }
+.deck-mindmap [data-branch="6"] { --deck-map-colour: var(--deck-series-6); }
+/* A branch shown a click fades in where it is: moved, its words would be placed from it. */
+.deck-mindmap .deck-step:not(.is-on) { translate: none; }
 /* Scripts without italics keep their upright letters. */
 .deck :is(blockquote, em):is(:lang(ar), :lang(fa), :lang(ur), :lang(he), :lang(ja), :lang(zh), :lang(ko), :lang(hi), :lang(th)) { font-style: normal; }
 .deck-layout-quote blockquote::before { content: "\201C"; display: block; font-size: 2.4em; line-height: 0.6; color: var(--deck-primary); }

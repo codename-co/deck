@@ -3,12 +3,15 @@
 // policy can draw a deck. Each block that can be changed by hand says where its words are in the
 // source (data-edit, offsets), so an edit made on the slide goes back into the Markdown. HTML a
 // deck holds is not drawn: Slidev's <v-click> and <v-clicks> become steps, <br> a line break, and
-// any other tag gives up its words alone. ```echarts and ```mermaid go to the host's drawers.
+// any other tag gives up its words alone. ```echarts and ```mermaid go to the host's drawers. A
+// layout that draws its lists as a mind map has a slot's lists merged into one map (mindmap.js).
 import { STANDARD, CORNERS, inferLayout, ALIASES } from './kit.js'
+import { itemsOf, mergeItems, keyOf, watchMap } from './mindmap.js'
+import { parseYaml } from './yaml.js'
 
 /** @typedef {import('./parse.js').Slide} Slide */
 /** @typedef {import('./parse.js').Slot} Slot */
-/** @typedef {(element: HTMLElement, source: string) => void | Promise<void>} Drawer */
+/** @typedef {(element: HTMLElement, source: string, options?: Record<string, any>) => void | Promise<void>} Drawer */
 /** @typedef {{ blocks: Record<string, Drawer>, resolve: (src: string) => string | null, headings: 'real' | 'aria', number: (n: number) => string, total: number, kit: import('./kit.js').Kit, lex: (markdown: string) => any[], slide: string }} Context */
 
 /**
@@ -69,7 +72,7 @@ export function renderSlide(slide, context) {
   }
   for (const name of names) {
     const slot = slots.get(name)
-    const element = h('div', { class: 'deck-slot', 'data-slot': name }, slot ? blocks(slot, context, counter) : [])
+    const element = h('div', { class: 'deck-slot', 'data-slot': name }, slot ? blocks(slot, context, counter, definition.lists === 'mindmap') : [])
     element.style.setProperty('grid-area', `s-${name}`)
     canvas.append(element)
   }
@@ -87,15 +90,28 @@ export function renderSlide(slide, context) {
   return { element: section, steps: counter.step }
 }
 
-/** @param {Slot} slot @param {Context} context @param {{ step: number }} counter @returns {Node[]} */
-function blocks(slot, context, counter) {
+/** @param {Slot} slot @param {Context} context @param {{ step: number }} counter @param {boolean} [mapped] its lists as a mind map @returns {Node[]} */
+function blocks(slot, context, counter, mapped = false) {
   const tokens = context.lex(slot.text)
   /** @type {Node[]} */
   const out = []
+  // A mind map's lists, each with its heading when one comes just before it, and where the map goes.
+  /** @type {{ items: import('./mindmap.js').Item[], step: boolean }[]} */
+  const lists = []
+  let mapAt = -1, label = /** @type {HTMLElement | null} */ (null)
   let at = slot.start, mode = /** @type {'' | 'click' | 'clicks'} */ ('')
-  for (const token of tokens) {
+  for (const [i, token] of tokens.entries()) {
     const start = at
     at += token.raw.length
+    if (mapped && (token.type === 'list' || (token.type === 'heading' && out.length && tokens.slice(i + 1).find((/** @type {any} */ t) => t.type !== 'space')?.type === 'list'))) {
+      if (mapAt < 0) mapAt = out.length
+      if (token.type === 'heading') { label = /** @type {HTMLElement} */ (block(token, start, context, null)); continue }
+      const items = itemsOf(token.raw, start)
+      for (const item of items) if (mode === 'clicks') item.step = true
+      lists.push({ items: label ? [{ text: label.textContent ?? '', start, end: start, children: items, element: label, step: mode === 'clicks' }] : items, step: mode === 'clicks' })
+      label = null
+      continue
+    }
     // Pandoc's fences: `::: incremental` shows its list a point a click, as <v-clicks> does; the others, nothing.
     const fences = token.type === 'paragraph' ? token.raw.trim().split('\n').map((/** @type {string} */ line) => line.trim()) : []
     if (fences.length && fences.every((/** @type {string} */ line) => /^:{3,}/.test(line))) {
@@ -132,7 +148,54 @@ function blocks(slot, context, counter) {
     if (mode === 'click' || (mode === 'clicks' && token.type !== 'list')) step(element, ++counter.step)
     out.push(element)
   }
+  if (lists.length) mindmap(out, lists.flatMap((list) => list.items), context, counter, mapAt)
   return out
+}
+
+/**
+ * A slot's lists as one mind map, put among its other blocks where the first list was: merged, under the item they share, else under the heading the slot opens with, taken
+ * from the slot into the map; a heading other than that one stays the slide's. Each branch is a step when its list was
+ * one a click. Its words keep where they are in the source, so they change in place as a list's do; a chart or a
+ * diagram fenced under an item is drawn in its node, under its words.
+ * @param {Node[]} out the slot's other blocks @param {import('./mindmap.js').Item[]} items @param {Context} context
+ * @param {{ step: number }} counter @param {number} at where the map goes
+ */
+function mindmap(out, items, context, counter, at) {
+  const merged = mergeItems(items)
+  const opening = at > 0 && out[0] instanceof HTMLElement && out[0].matches('h1, h2, h3, h4, h5, h6, .deck-h') ? out[0] : null
+  /** @type {import('./mindmap.js').Item} */
+  let root
+  if (merged.length === 1 && (!opening || keyOf(opening.textContent ?? '') === keyOf(merged[0].text))) root = { ...merged[0], element: opening ?? merged[0].element }
+  else if (merged.length === 1) root = merged[0]
+  else root = { text: opening?.textContent ?? '', start: 0, end: 0, children: merged, element: opening ?? undefined }
+  if (opening && root.element === opening) { out.shift(); at-- }
+  const node = (/** @type {import('./mindmap.js').Item} */ item, /** @type {number} */ depth) => {
+    if (item.element) { item.element.classList.add('deck-map-node'); item.element.setAttribute('data-depth', String(depth)); return item.element }
+    const [first] = item.text ? context.lex(item.text) : []
+    const words = inline(first?.tokens ?? [{ type: 'text', text: item.text }], context)
+    if (!item.blocks?.length) return h('span', { class: 'deck-map-node', 'data-depth': depth, dir: 'auto', 'data-edit': range(item.start, item.end) }, words)
+    return h('div', { class: 'deck-map-node has-block', 'data-depth': depth }, [
+      item.text ? h('span', { class: 'deck-map-words', dir: 'auto', 'data-edit': range(item.start, item.end) }, words) : null,
+      ...item.blocks.map((one) => block({ type: 'code', lang: one.lang, text: one.text, raw: one.text }, item.start, context, null)),
+    ])
+  }
+  /** @type {(item: import('./mindmap.js').Item, depth: number) => HTMLElement} */
+  const tree = (item, depth) => h('li', {}, [node(item, depth), item.children.length ? h('ul', {}, item.children.map((child) => tree(child, depth + 1))) : null])
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('class', 'deck-map-lines')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('preserveAspectRatio', 'none')
+  const branches = root.children.map((child, n) => {
+    const li = tree(child, 1), group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+    for (const one of [li, group]) one.setAttribute('data-branch', String((n % 6) + 1))
+    if (child.step) { const k = ++counter.step; step(li, k); step(group, k) }
+    svg.append(group)
+    return li
+  })
+  const top = h('li', {}, [node(root, 0), branches.length ? h('ul', {}, branches) : null])
+  const map = h('div', { class: 'deck-mindmap' }, [h('div', { class: 'deck-map-plane' }, [svg, h('ul', { class: 'deck-map-tree' }, [top])])])
+  watchMap(map)
+  out.splice(at, 0, map)
 }
 
 /** @param {Element} element @param {number} n */
@@ -185,7 +248,7 @@ function block(token, start, context, stepped) {
       if (drawer) {
         const box = h('div', { class: `deck-block deck-${lang}`, 'data-source': token.text })
         box.append(h('pre', { class: 'deck-block-source', dir: 'ltr' }, [h('code', {}, [token.text])]))
-        queueMicrotask(() => Promise.resolve(drawer(box, token.text)).catch(() => box.classList.add('is-failed')))
+        queueMicrotask(() => Promise.resolve(drawer(box, token.text, optionsOf(token.lang ?? ''))).catch(() => box.classList.add('is-failed')))
         return box
       }
       const marked = lines(info[2] ?? '')
@@ -212,6 +275,17 @@ function children(tokens, start, raw, context) {
     from = Math.max(from, offset + token.raw.length)
     return block(token, start + Math.max(0, offset), context, null)
   })
+}
+
+/**
+ * The options after a fence's language, as Slidev writes them (`mermaid {theme: 'neutral', scale: 0.8}`), read as YAML's
+ * flow, which JSON is too; none if they don't read. @param {string} info @returns {Record<string, any>}
+ */
+export function optionsOf(info) {
+  const braces = /\{[\s\S]*\}/.exec(info)?.[0]
+  if (!braces) return {}
+  const read = parseYaml(`options: ${braces.replace(/\n/g, ' ')}`).options
+  return read && typeof read === 'object' && !Array.isArray(read) ? read : {}
 }
 
 /** Line numbers as Slidev marks them, `{2,4-5}`; `|` steps are read as all their lines at once. @param {string} text */
